@@ -1,26 +1,85 @@
 use serde::{Deserialize, Serialize};
+use serde::de::{self, Deserializer};
 
 use crate::core::llm_client::{LlmClient, LlmSlot};
 use crate::core::prompts;
 use crate::core::summary::SummaryResult;
 
+fn deserialize_match_score<'de, D>(deserializer: D) -> Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct MatchScoreVisitor;
+
+    impl<'de> de::Visitor<'de> for MatchScoreVisitor {
+        type Value = u8;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a number 0-100 or a string like '96', '96%'")
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<u8, E> {
+            Ok(v.min(100) as u8)
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<u8, E> {
+            Ok(v.clamp(0, 100) as u8)
+        }
+
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<u8, E> {
+            Ok(v.clamp(0.0, 100.0) as u8)
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<u8, E> {
+            let cleaned = v.trim().trim_end_matches('%').trim();
+            match cleaned.parse::<f64>() {
+                Ok(n) => Ok(n.clamp(0.0, 100.0) as u8),
+                Err(_) => Ok(0),
+            }
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<u8, E> {
+            Ok(0)
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<u8, E> {
+            Ok(0)
+        }
+    }
+
+    deserializer.deserialize_any(MatchScoreVisitor)
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JournalCandidate {
     pub journal_name: String,
-    pub publisher: String,
-    pub scope_fit: String,
-    pub article_type_fit: String,
-    pub similar_articles: String,
-    pub impact_factor_or_metric: String,
-    pub apc: String,
-    pub word_limit: String,
-    pub open_access_policy: String,
-    pub pros: String,
-    pub cons: String,
-    pub recommendation_level: String,
-    pub reason: String,
-    pub source_evidence: String,
     #[serde(default)]
+    pub publisher: String,
+    #[serde(default)]
+    pub scope_fit: String,
+    #[serde(default)]
+    pub article_type_fit: String,
+    #[serde(default)]
+    pub similar_articles: String,
+    #[serde(default)]
+    pub impact_factor_or_metric: String,
+    #[serde(default)]
+    pub apc: String,
+    #[serde(default)]
+    pub word_limit: String,
+    #[serde(default)]
+    pub open_access_policy: String,
+    #[serde(default)]
+    pub pros: String,
+    #[serde(default)]
+    pub cons: String,
+    #[serde(default)]
+    pub recommendation_level: String,
+    #[serde(default)]
+    pub reason: String,
+    #[serde(default)]
+    pub source_evidence: String,
+    #[serde(default, deserialize_with = "deserialize_match_score")]
     pub match_score: u8,
     #[serde(default)]
     pub publication_route: String,
@@ -70,8 +129,8 @@ pub async fn parse_external_results(
                     }
                     Ok(candidates)
                 }
-                Err(_) => Ok(vec![JournalCandidate {
-                    journal_name: "(JSON parse failed — see raw response)".to_string(),
+                Err(e) => Ok(vec![JournalCandidate {
+                    journal_name: format!("(JSON parse failed: {})", e),
                     publisher: String::new(),
                     scope_fit: String::new(),
                     article_type_fit: String::new(),
@@ -153,7 +212,39 @@ fn infer_cost_risk(apc_required: &str, apc: &str) -> String {
 }
 
 fn parse_journal_candidates_json(text: &str) -> Result<Vec<JournalCandidate>, serde_json::Error> {
-    serde_json::from_str(text)
+    // 1. Try direct parse
+    if let Ok(candidates) = serde_json::from_str::<Vec<JournalCandidate>>(text) {
+        return Ok(candidates);
+    }
+
+    // 2. Try extracting from markdown code block
+    if let Some(extracted) = extract_from_code_block(text) {
+        if let Ok(candidates) = serde_json::from_str::<Vec<JournalCandidate>>(&extracted) {
+            return Ok(candidates);
+        }
+    }
+
+    // 3. Try extracting JSON array from text
+    let array_text = try_extract_json_array(text);
+    serde_json::from_str(&array_text)
+}
+
+fn extract_from_code_block(text: &str) -> Option<String> {
+    // Find ```json ... ``` or ``` ... ```
+    let start_markers = ["```json\n", "```json\r\n", "```\n", "```\r\n"];
+    for marker in &start_markers {
+        if let Some(start_idx) = text.find(marker) {
+            let content_start = start_idx + marker.len();
+            if let Some(end_idx) = text[content_start..].find("```") {
+                let content = &text[content_start..content_start + end_idx];
+                let trimmed = content.trim();
+                if trimmed.starts_with('[') || trimmed.starts_with('{') {
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn try_extract_json_array(text: &str) -> String {

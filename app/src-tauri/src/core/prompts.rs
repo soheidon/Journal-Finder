@@ -165,7 +165,7 @@ For each journal, provide ALL of the following:
 15. **Recommendation Level** — Strong / Moderate / Weak
 16. **Reason** — why this journal fits
 17. **Source Evidence** — URL or evidence
-18. **Match Score** — 0-100 integer
+18. **Match Score** — 0-100 integer (number, not string. Example: 96, not "96")
 19. **Publication Route** — subscription, hybrid OA, gold OA, etc.
 20. **Recommended Submission Strategy** — cost-optimal strategy
 21. **Cost Risk Level** — low / medium / high / unknown
@@ -204,7 +204,9 @@ CRITICAL OUTPUT RULES:
 - Do NOT include Markdown fences (```json).
 - Do NOT include any text outside the JSON array.
 - All values must be strings (use "" if information is not available).
-- match_score must be an integer 0-100 (as a string, e.g. "85").
+- match_score must be a number 0-100 (NOT a string. Example: 96, not "96")
+- Return ONLY a JSON array. No markdown fences, no explanations.
+- All fields are required for each candidate. Use null or "unknown" if information is not available.
 - Journal names and publisher names must be in English.
 - Include ALL candidates — do NOT limit the number.
 
