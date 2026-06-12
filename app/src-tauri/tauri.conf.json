@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
-  "productName": "Journal Finder",
+  "productName": "論文投稿先アドバイザ",
   "version": "0.1.0",
   "identifier": "com.journal-finder.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Journal Finder",
+        "title": "論文投稿先アドバイザ",
         "width": 1200,
         "height": 800,
         "resizable": true,
