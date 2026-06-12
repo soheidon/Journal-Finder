@@ -9,6 +9,12 @@ pub struct DeepResearchApiResult {
     pub message: String,
 }
 
+// TODO: Future improvements for long-running Deep Research:
+// - Background mode: submit request, poll for completion
+// - Streaming: SSE-based real-time output
+// - Cancellation support
+// For now, synchronous execution with 600s timeout.
+
 pub async fn run_openai_deep_research(
     api_key: &str,
     model: &str,
@@ -86,9 +92,14 @@ pub async fn run_openai_deep_research(
     let raw_report = extract_responses_text(&data);
 
     if raw_report.is_empty() {
+        // Show response structure for debugging (without API key)
+        let debug_text = serde_json::to_string_pretty(&data)
+            .unwrap_or_else(|_| text.clone())
+            .chars().take(2000)
+            .collect::<String>();
         DeepResearchApiResult {
-            ok: false, raw_report: text.clone(), model_used,
-            output_tokens, message: "No text content in response".to_string(),
+            ok: false, raw_report: debug_text, model_used,
+            output_tokens, message: "No text content in response. See raw response for structure.".to_string(),
         }
     } else {
         DeepResearchApiResult {
@@ -99,14 +110,30 @@ pub async fn run_openai_deep_research(
 }
 
 fn extract_responses_text(data: &serde_json::Value) -> String {
-    // Responses API format: output array with content blocks
+    // 1. Try output_text (simplest Responses API format)
+    if let Some(text) = data.get("output_text").and_then(|t| t.as_str()) {
+        if !text.is_empty() {
+            return text.to_string();
+        }
+    }
+
+    // 2. Try output array with message/content blocks
     if let Some(output) = data.get("output").and_then(|o| o.as_array()) {
         let mut texts = Vec::new();
         for item in output {
+            // Try message.content[].text
             if let Some(content) = item.get("content").and_then(|c| c.as_array()) {
                 for block in content {
                     if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
                         texts.push(text.to_string());
+                    }
+                }
+            }
+            // Try message.content as string
+            if texts.is_empty() {
+                if let Some(content) = item.get("content").and_then(|c| c.as_str()) {
+                    if !content.is_empty() {
+                        texts.push(content.to_string());
                     }
                 }
             }
@@ -116,7 +143,7 @@ fn extract_responses_text(data: &serde_json::Value) -> String {
         }
     }
 
-    // Fallback: try choices format (in case it's used)
+    // 3. Fallback: try choices format (chat/completions compatibility)
     if let Some(choices) = data.get("choices").and_then(|c| c.as_array()) {
         if let Some(first) = choices.first() {
             if let Some(text) = first.get("message").and_then(|m| m.get("content")).and_then(|c| c.as_str()) {
@@ -125,6 +152,7 @@ fn extract_responses_text(data: &serde_json::Value) -> String {
         }
     }
 
+    // 4. Nothing found — return empty (caller will show debug info)
     String::new()
 }
 
