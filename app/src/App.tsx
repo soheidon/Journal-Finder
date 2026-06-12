@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./Sidebar";
 import ProgressBar from "./ProgressBar";
@@ -136,6 +136,22 @@ function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [logExpanded, setLogExpanded] = useState(false);
   const [llmTestResults, setLlmTestResults] = useState<Record<string, LlmTestResult>>({});
+  const initialLoadDone = useRef(false);
+
+  // Auto-save positioningResult to project folder
+  useEffect(() => {
+    if (!initialLoadDone.current || !projectInfo) return;
+    const timer = setTimeout(async () => {
+      try {
+        await invoke("save_project_file", {
+          projectDir: projectInfo.path,
+          filename: "data/positioning_result.txt",
+          content: positioningResult,
+        });
+      } catch (_) {}
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [positioningResult, projectInfo]);
 
   const addLog = useCallback((message: string) => {
     const now = new Date().toLocaleTimeString("ja-JP");
@@ -283,6 +299,7 @@ function App() {
       await invoke("add_recent_project", { info });
       addLog(`プロジェクト作成: ${info.path}`);
       showStatus("success", `プロジェクト「${name}」を作成しました`);
+      initialLoadDone.current = true;
     } catch (e) {
       addLog(`プロジェクト作成エラー: ${e}`);
       showStatus("error", `${e}`);
@@ -321,6 +338,16 @@ function App() {
         setSearchStatus("done");
         addLog(`ジャーナル候補復元: ${js.length} 件`);
       } catch (_) { /* no saved journals */ }
+
+      try {
+        const posResult = await invoke<string>("load_project_file", { projectDir: path, filename: "data/positioning_result.txt" });
+        if (posResult) {
+          setPositioningResult(posResult);
+          addLog("立ち位置調査結果を復元しました");
+        }
+      } catch (_) { /* no saved positioning result */ }
+
+      initialLoadDone.current = true;
     } catch (e) {
       addLog(`プロジェクト読み込みエラー: ${e}`);
       showStatus("error", `${e}`);
@@ -394,6 +421,7 @@ function App() {
               journalSearchPrompt={journalSearchPrompt}
               onGetJournalSearchPrompt={handleGetJournalSearchPrompt}
               onParseExternalResults={handleParseExternalResults}
+              onNavigateToPositioning={() => setActiveView("positioning")}
             />
           )}
           {activeView === "results" && (

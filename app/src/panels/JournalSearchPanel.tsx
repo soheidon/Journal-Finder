@@ -14,6 +14,7 @@ interface JournalSearchPanelProps {
   journalSearchPrompt: string;
   onGetJournalSearchPrompt: () => void;
   onParseExternalResults: (externalA: string, externalB: string) => void;
+  onNavigateToPositioning: () => void;
 }
 
 const statusLabels: Record<PipelineStatus, { label: string; cls: string }> = {
@@ -35,6 +36,7 @@ function JournalSearchPanel({
   journalSearchPrompt,
   onGetJournalSearchPrompt,
   onParseExternalResults,
+  onNavigateToPositioning,
 }: JournalSearchPanelProps) {
   const [selectedJournal, setSelectedJournal] = useState<JournalCandidate | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("match_score");
@@ -92,9 +94,7 @@ function JournalSearchPanel({
             ) : (
               <p className="hint-text" style={{ color: "#c19c00" }}>
                 ⚠ 立ち位置調査結果がありません。論文要約のみでジャーナル調査を行います。候補の精度が下がる可能性があります。
-                <button className="link-button" style={{ marginLeft: 8 }} onClick={() => {
-                  // Navigate to positioning panel — handled by parent
-                }}>
+                <button className="link-button" style={{ marginLeft: 8 }} onClick={onNavigateToPositioning}>
                   立ち位置調査へ戻る
                 </button>
               </p>
