@@ -381,6 +381,7 @@ function App() {
               positioningResult={positioningResult}
               onGetPositioningPrompt={handleGetPositioningPrompt}
               onSetPositioningResult={setPositioningResult}
+              onNavigateToJournalSearch={() => setActiveView("journal_search")}
             />
           )}
           {activeView === "journal_search" && (

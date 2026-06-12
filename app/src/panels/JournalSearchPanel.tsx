@@ -84,6 +84,24 @@ function JournalSearchPanel({
       {ready && (
         <>
           <div className="input-section">
+            <h3>立ち位置調査の状態</h3>
+            {positioningResult ? (
+              <p className="hint-text" style={{ color: "#107c10" }}>
+                ✓ 立ち位置調査結果を使用してジャーナル候補を探します。先行研究・新規性・研究領域を踏まえた候補が得られます。
+              </p>
+            ) : (
+              <p className="hint-text" style={{ color: "#c19c00" }}>
+                ⚠ 立ち位置調査結果がありません。論文要約のみでジャーナル調査を行います。候補の精度が下がる可能性があります。
+                <button className="link-button" style={{ marginLeft: 8 }} onClick={() => {
+                  // Navigate to positioning panel — handled by parent
+                }}>
+                  立ち位置調査へ戻る
+                </button>
+              </p>
+            )}
+          </div>
+
+          <div className="input-section">
             <h3>調査方式</h3>
             <div className="report-tabs">
               <button className={`report-tab ${searchTab === "paste" ? "active" : ""}`} onClick={() => setSearchTab("paste")}>外部 Deep Research を利用（推奨）</button>
@@ -106,7 +124,12 @@ function JournalSearchPanel({
                   推奨: 外部 Deep Research を利用します。API 課金を抑えながら、ChatGPT / Perplexity / Gemini / Claude 等の Deep Research 結果を貼り付けて解析します。
                 </p>
                 <div className="action-row">
-                  <button onClick={onGetJournalSearchPrompt}>
+                  <button onClick={() => {
+                    if (!positioningResult) {
+                      if (!confirm("立ち位置調査結果がありません。論文要約のみでジャーナル調査を実行しますか？\nより精度を上げるには、先に立ち位置調査を行うことを推奨します。")) return;
+                    }
+                    onGetJournalSearchPrompt();
+                  }}>
                     {journalSearchPrompt ? "プロンプトを再生成" : "プロンプトを生成"}
                   </button>
                   {journalSearchPrompt && (

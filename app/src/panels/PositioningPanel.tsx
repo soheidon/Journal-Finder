@@ -9,6 +9,7 @@ interface PositioningPanelProps {
   positioningResult: string;
   onGetPositioningPrompt: () => void;
   onSetPositioningResult: (result: string) => void;
+  onNavigateToJournalSearch: () => void;
 }
 
 function PositioningPanel({
@@ -18,6 +19,7 @@ function PositioningPanel({
   positioningResult,
   onGetPositioningPrompt,
   onSetPositioningResult,
+  onNavigateToJournalSearch,
 }: PositioningPanelProps) {
   const [copied, setCopied] = useState(false);
   const [searchTab, setSearchTab] = useState<"paste" | "api">("paste");
@@ -36,6 +38,8 @@ function PositioningPanel({
         <h3>立ち位置調査について</h3>
         <p>
           論文の要約をもとに、先行研究の中でこの論文がどういう位置にあるかを調べます。
+          立ち位置調査を先に行うと、類似研究・研究領域・新規性・方法論上の特徴が整理されます。
+          この結果を使ってジャーナル調査を行うことで、単なるキーワード検索ではなく、どの領域のどの読者に向けた論文かを踏まえた投稿先候補を探せます。
         </p>
         <ul>
           <li>近い先行研究を調べる</li>
@@ -110,9 +114,16 @@ function PositioningPanel({
               rows={12}
             />
             {positioningResult && (
-              <p className="hint-text" style={{ color: "#107c10", marginTop: 8 }}>
-                ✓ 立ち位置調査結果が保存されました。次の「ジャーナル調査」画面に進んでください。
-              </p>
+              <>
+                <p className="hint-text" style={{ color: "#107c10", marginTop: 8 }}>
+                  ✓ 立ち位置調査結果が保存されました。次の「ジャーナル調査」画面に進んでください。
+                </p>
+                <div className="action-row" style={{ marginTop: 8 }}>
+                  <button onClick={onNavigateToJournalSearch}>
+                    次へ：ジャーナル調査へ進む →
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </>
