@@ -101,6 +101,27 @@ pub fn load_settings_inner() -> Vec<LlmSlotConfig> {
         Ok(data) => {
             let mut slots: Vec<LlmSlotConfig> = serde_json::from_str(&data)
                 .unwrap_or_else(|_| default_slots());
+            // Migrate old slot names
+            for s in &mut slots {
+                if s.name == "summarizer" || s.name == "journal_assessor" {
+                    s.name = "analysis_llm".to_string();
+                }
+            }
+            // Deduplicate: keep only one analysis_llm
+            let mut seen_analysis = false;
+            slots.retain(|s| {
+                if s.name == "analysis_llm" {
+                    if seen_analysis { return false; }
+                    seen_analysis = true;
+                }
+                true
+            });
+            // Ensure deep_research_provider exists
+            if !slots.iter().any(|s| s.name == "deep_research_provider") {
+                let mut dr = default_slots().remove(1);
+                dr.name = "deep_research_provider".to_string();
+                slots.push(dr);
+            }
             for s in &mut slots { s.api_key.clear(); }
             slots
         }
@@ -111,7 +132,7 @@ pub fn load_settings_inner() -> Vec<LlmSlotConfig> {
 fn default_slots() -> Vec<LlmSlotConfig> {
     vec![
         LlmSlotConfig {
-            name: "summarizer".to_string(),
+            name: "analysis_llm".to_string(),
             provider: "openai".to_string(),
             api_format: crate::core::llm_client::ApiFormat::OpenAICompatible,
             base_url: "https://api.openai.com/v1".to_string(),
@@ -124,7 +145,7 @@ fn default_slots() -> Vec<LlmSlotConfig> {
             model_list_source: "api".to_string(),
         },
         LlmSlotConfig {
-            name: "journal_assessor".to_string(),
+            name: "deep_research_provider".to_string(),
             provider: "openai".to_string(),
             api_format: crate::core::llm_client::ApiFormat::OpenAICompatible,
             base_url: "https://api.openai.com/v1".to_string(),

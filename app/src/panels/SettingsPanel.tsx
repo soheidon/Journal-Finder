@@ -101,7 +101,7 @@ function makeDefault(name: string): LlmSlotConfig {
 }
 
 function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }: SettingsPanelProps) {
-  const [slots, setSlots] = useState<LlmSlotConfig[]>([makeDefault("summarizer"), makeDefault("journal_assessor")]);
+  const [slots, setSlots] = useState<LlmSlotConfig[]>([makeDefault("analysis_llm"), makeDefault("deep_research_provider")]);
   const [testing, setTesting] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [modelListResults, setModelListResults] = useState<Record<string, ModelListResult>>({});
@@ -145,7 +145,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                 next[0] = { ...next[0], provider: detected.provider as LlmProvider, api_format: meta.api_format, base_url: firstPreset.base_url, model: firstPreset.model, api_key_env: detected.key_name, reasoning_enabled: firstPreset.reasoning_enabled, reasoning_mode: firstPreset.reasoning_mode, model_list_source: meta.model_list };
                 return next;
               });
-              addLog(`環境変数 ${detected.key_name} を検出しました。summarizer を ${meta.label} に自動設定しました`);
+              addLog(`環境変数 ${detected.key_name} を検出しました。解析LLM を ${meta.label} に自動設定しました`);
             }
           }
         }
@@ -307,8 +307,8 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
           2 つのスロットを設定してください。
         </p>
         <ul>
-          <li><strong>summarizer</strong>: 論文の構造化要約を生成します</li>
-          <li><strong>journal_assessor</strong>: Deep Research 結果を解析し、投稿先候補を推薦します</li>
+          <li><strong>解析 LLM</strong>: 論文要約、Deep Research 結果の解析、候補ジャーナルの整理・評価に使用します</li>
+          <li><strong>Deep Research API</strong>: API 経由で Web 調査・Deep Research を実行する場合に使用します（外部貼り付け方式だけ使う場合は未設定でも可）</li>
         </ul>
         <p>
           API Key は環境変数で管理します。設定ファイルには環境変数名のみ保存され、キーの実値は保存されません。
@@ -330,7 +330,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
 
           return (
             <div key={slot.name} className="llm-slot">
-              <h4>{slot.name === "summarizer" ? "summarizer（論文要約）" : "journal_assessor（ジャーナル評価）"}</h4>
+              <h4>{slot.name === "analysis_llm" ? "解析 LLM" : "Deep Research API"}</h4>
               <div className="slot-layout">
 
                 {/* Left: Settings */}

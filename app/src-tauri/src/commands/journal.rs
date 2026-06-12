@@ -7,8 +7,8 @@ fn get_assessor_slot() -> Result<crate::core::llm_client::LlmSlot, String> {
     let slots = load_settings_inner();
     let config = slots
         .iter()
-        .find(|s| s.name == "journal_assessor")
-        .ok_or("journal_assessor スロットが設定されていません。設定画面で LLM を設定してください。")?;
+        .find(|s| s.name == "analysis_llm")
+        .ok_or("analysis_llm スロットが設定されていません。設定画面で LLM を設定してください。")?;
 
     let api_key = config.resolve_api_key()?;
     Ok(config.to_slot(api_key))
