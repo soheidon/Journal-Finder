@@ -366,7 +366,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
           const showReasoning = ["gemini", "anthropic", "kimi"].includes(slot.provider);
           const isDeepResearch = slot.name === "deep_research_provider";
           const slotPresets = getPresetsForSlot(slot.name);
-          const availablePresets = slotPresets.filter(p => p.provider === slot.provider || (isDeepResearch && slot.provider === "custom"));
+          const availablePresets = slotPresets.filter(p => p.provider === slot.provider);
 
           return (
             <div key={slot.name} className="llm-slot">
@@ -397,6 +397,11 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                   {slot.provider === "anthropic" && (
                     <p style={{ color: "#888", marginTop: 4 }}>
                       Anthropic: Web search は通常トークン料金とは別に検索回数課金があります。
+                    </p>
+                  )}
+                  {slot.provider === "custom" && (
+                    <p style={{ color: "#888", marginTop: 4 }}>
+                      Custom: Search API + LLM 方式は未実装です。Base URL とモデル名を手動入力してください。
                     </p>
                   )}
                 </div>
@@ -436,10 +441,16 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                       )}
                     </div>
 
-                    {availablePresets.length > 0 && !availablePresets.some(p => p.model === slot.model) && (
+                    {/* Manual model input — show when no preset matches or model is empty */}
+                    {!availablePresets.some(p => p.model === slot.model) && (
                       <>
-                        <label>Model ID</label>
-                        <input type="text" value={slot.model} onChange={e => updateSlot(index, "model", e.target.value)} placeholder="model-id を直接入力" />
+                        <label>モデル名（手動入力）</label>
+                        <input
+                          type="text"
+                          value={slot.model}
+                          onChange={e => updateSlot(index, "model", e.target.value)}
+                          placeholder={isDeepResearch ? "例: o4-mini-deep-research, sonar-deep-research" : "例: gpt-5.4, deepseek-v4-pro"}
+                        />
                       </>
                     )}
 
