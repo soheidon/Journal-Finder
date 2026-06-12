@@ -24,6 +24,8 @@ fn main() {
             commands::journal::get_search_prompt,
             commands::journal::parse_external_results,
             commands::journal::run_openai_deep_research,
+            commands::journal::extract_journal_names,
+            commands::journal::parse_single_journal,
             commands::report::generate_report,
             commands::report::export_report,
             commands::project::create_project,

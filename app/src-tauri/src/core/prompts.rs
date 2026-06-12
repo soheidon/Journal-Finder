@@ -393,3 +393,89 @@ Provide specific references with author names, year, title, journal name, and UR
         keywords = keywords,
     )
 }
+
+pub fn build_extract_journal_names_messages(journal_research: &str) -> Vec<crate::core::llm_client::ChatMessage> {
+    let system = r#"You are a research assistant. Extract journal names from the research report below.
+
+CRITICAL OUTPUT RULES:
+- Return ONLY a JSON array of journal name strings.
+- No markdown fences, no explanations.
+- Journal names must be the full official name in English.
+- Include ALL journals mentioned as candidates.
+- Example: ["Child Abuse & Neglect", "Evolution and Human Behavior", "Development and Psychopathology"]"#;
+
+    let user = format!("# Deep Research Report\n\n{}", journal_research);
+
+    vec![
+        crate::core::llm_client::ChatMessage { role: "system".to_string(), content: system.to_string() },
+        crate::core::llm_client::ChatMessage { role: "user".to_string(), content: user },
+    ]
+}
+
+pub fn build_single_journal_parse_messages(
+    journal_name: &str,
+    journal_research: &str,
+    positioning_report: &str,
+    summary: &SummaryResult,
+) -> Vec<crate::core::llm_client::ChatMessage> {
+    let keywords = summary.keywords_for_search.join(", ");
+
+    let system = format!(
+        r#"You are a research assistant. Generate a structured JSON profile for the journal "{journal_name}" based on the research report below.
+
+CRITICAL OUTPUT RULES:
+- Return ONLY a single JSON object. NOT an array.
+- No markdown fences, no explanations.
+- journal_name must be "{journal_name}" (exact match).
+- journal_name, publisher, similar_articles, URL/DOI: English
+- scope_fit, article_type_fit, pros, cons, reason: Japanese (max 120 chars each)
+- apc_avoidance, recommended_submission_strategy, waiver_or_discount_info: Japanese (max 120 chars each)
+- match_score: number 0-100 (NOT a string)
+- recommendation_level: Strong / Moderate / Weak (English)
+- cost_risk_level: low / medium / high / unknown (English)
+- apc_required: required / optional / no_apc / unknown (English)
+- Unknown fields: use "" or "不明"
+
+JSON fields:
+journal_name, publisher, scope_fit, article_type_fit, similar_articles,
+impact_factor_or_metric, apc, word_limit, open_access_policy, pros, cons,
+recommendation_level, reason, source_evidence, match_score, publication_route,
+apc_required, apc_avoidance, recommended_submission_strategy,
+waiver_or_discount_info, cost_risk_level"#
+    );
+
+    let user = format!(
+        r#"# Target Journal
+{journal_name}
+
+# Manuscript Summary
+- Topic: {topic}
+- Objective: {objective}
+- Sample: {sample}
+- Design: {design}
+- Methods: {methods}
+- Findings: {findings}
+- Keywords: {keywords}
+
+# Positioning Report
+{positioning}
+
+# Deep Research Report
+{research}"#,
+        journal_name = journal_name,
+        topic = summary.research_topic,
+        objective = summary.objective,
+        sample = summary.sample_summary,
+        design = summary.design,
+        methods = summary.methods_summary,
+        findings = summary.findings,
+        keywords = keywords,
+        positioning = if positioning_report.is_empty() { "(not available)" } else { positioning_report },
+        research = journal_research,
+    );
+
+    vec![
+        crate::core::llm_client::ChatMessage { role: "system".to_string(), content: system },
+        crate::core::llm_client::ChatMessage { role: "user".to_string(), content: user },
+    ]
+}

@@ -421,8 +421,10 @@ function App() {
               searchStatus={searchStatus}
               journalSearchPrompt={journalSearchPrompt}
               projectInfo={projectInfo}
+              addLog={addLog}
               onGetJournalSearchPrompt={handleGetJournalSearchPrompt}
-              onParseExternalResults={handleParseExternalResults}
+              onSetJournals={setJournals}
+              onSetSearchStatus={setSearchStatus}
               onNavigateToPositioning={() => setActiveView("positioning")}
             />
           )}

@@ -15,8 +15,10 @@ interface JournalSearchPanelProps {
   searchStatus: PipelineStatus;
   journalSearchPrompt: string;
   projectInfo: ProjectInfo | null;
+  addLog: (message: string) => void;
   onGetJournalSearchPrompt: () => void;
-  onParseExternalResults: (externalA: string, externalB: string) => void;
+  onSetJournals: (journals: JournalCandidate[]) => void;
+  onSetSearchStatus: (status: PipelineStatus) => void;
   onNavigateToPositioning: () => void;
 }
 
@@ -38,8 +40,10 @@ function JournalSearchPanel({
   searchStatus,
   journalSearchPrompt,
   projectInfo,
+  addLog,
   onGetJournalSearchPrompt,
-  onParseExternalResults,
+  onSetJournals,
+  onSetSearchStatus,
   onNavigateToPositioning,
 }: JournalSearchPanelProps) {
   const [selectedJournal, setSelectedJournal] = useState<JournalCandidate | null>(null);
@@ -50,6 +54,9 @@ function JournalSearchPanel({
   const [externalA, setExternalA] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [parseProgress, setParseProgress] = useState<string>("");
+  const [parseTotal, setParseTotal] = useState(0);
+  const [parseCurrent, setParseCurrent] = useState(0);
 
   const stSearch = statusLabels[searchStatus];
   const ready = summaryResult && summaryStatus === "done";
@@ -89,12 +96,79 @@ function JournalSearchPanel({
   };
 
   const handleParse = async () => {
-    if (!externalA.trim()) return;
+    if (!externalA.trim() || !summaryResult) return;
     if (hasUnsavedChanges) {
       if (!confirm("未保存の変更があります。保存してから解析しますか？")) return;
       await handleSave();
     }
-    onParseExternalResults(externalA, "");
+
+    // Step A: Extract journal names
+    setParseProgress("候補ジャーナル名を抽出中...");
+    setParseTotal(0);
+    setParseCurrent(0);
+    try {
+      const names = await invoke<string[]>("extract_journal_names", {
+        journalResearch: externalA,
+      });
+
+      if (names.length === 0) {
+        setParseProgress("候補ジャーナルが見つかりませんでした");
+        return;
+      }
+
+      setParseTotal(names.length);
+      const candidates: JournalCandidate[] = [];
+      const errors: string[] = [];
+
+      // Step B: Parse each journal one by one
+      for (let i = 0; i < names.length; i++) {
+        const name = names[i];
+        setParseCurrent(i + 1);
+        setParseProgress(`${i + 1}/${names.length} ${name} を解析中...`);
+
+        try {
+          const candidate = await invoke<JournalCandidate>("parse_single_journal", {
+            journalName: name,
+            journalResearch: externalA,
+            positioningReport: positioningResult || "",
+            summary: summaryResult,
+          });
+          candidates.push(candidate);
+        } catch (e) {
+          errors.push(`${name}: ${e}`);
+          addLog(`[${name}] 解析失敗: ${e}`);
+        }
+      }
+
+      // Step C: Save results
+      setParseProgress("統合中...");
+      onSetJournals(candidates);
+      onSetSearchStatus("done");
+
+      // Save journals.json
+      if (projectInfo) {
+        try {
+          await invoke("save_project_file", {
+            projectDir: projectInfo.path,
+            filename: "data/journals.json",
+            content: JSON.stringify(candidates, null, 2),
+          });
+        } catch (_) {}
+      }
+
+      // Report results
+      if (errors.length === 0) {
+        setParseProgress(`完了: ${candidates.length} 件のジャーナル候補を生成しました`);
+        addLog(`解析完了: ${candidates.length} 件`);
+      } else {
+        setParseProgress(`${candidates.length} 件中 ${candidates.length} 件を解析しました。${errors.length} 件は失敗しました。`);
+        addLog(`解析完了: ${candidates.length} 件成功、${errors.length} 件失敗`);
+      }
+    } catch (e) {
+      setParseProgress(`エラー: ${e}`);
+      onSetSearchStatus("failed");
+      addLog(`ジャーナル名抽出エラー: ${e}`);
+    }
   };
 
   // Load saved content on mount
@@ -224,17 +298,27 @@ function JournalSearchPanel({
             <div className="input-section">
               <h3>解析</h3>
               <p className="hint-text">
-                保存済みのジャーナル調査結果を解析し、候補ジャーナルを生成します。
+                保存済みのジャーナル調査結果を解析し、候補ジャーナルを生成します。各ジャーナルを1件ずつ解析します。
               </p>
               <div className="action-row">
                 <button
                   onClick={handleParse}
-                  disabled={searchStatus === "in_progress"}
+                  disabled={searchStatus === "in_progress" || parseProgress.includes("中")}
                 >
-                  {searchStatus === "in_progress" ? "解析中..." : "保存済み結果を解析して候補を生成"}
+                  {parseProgress.includes("中") ? "解析中..." : "保存済み結果を解析して候補を生成"}
                 </button>
                 <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
               </div>
+              {parseProgress && (
+                <p className="hint-text" style={{ marginTop: 8, color: parseProgress.includes("エラー") || parseProgress.includes("失敗") ? "#d13438" : "#107c10" }}>
+                  {parseProgress}
+                </p>
+              )}
+              {parseTotal > 0 && (
+                <div className="parse-progress-bar">
+                  <div className="parse-progress-fill" style={{ width: `${(parseCurrent / parseTotal) * 100}%` }} />
+                </div>
+              )}
             </div>
           )}
         </>

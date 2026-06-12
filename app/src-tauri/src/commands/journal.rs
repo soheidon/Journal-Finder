@@ -62,3 +62,22 @@ pub async fn run_openai_deep_research(
     let prompt = deep_research_api::build_prompt(&task_type, &summary, &positioning_report);
     Ok(deep_research_api::run_openai_deep_research(&slot.api_key, &slot.model, &prompt).await)
 }
+
+#[tauri::command]
+pub async fn extract_journal_names(journal_research: String) -> Result<Vec<String>, String> {
+    let slot = get_assessor_slot()?;
+    deep_research::extract_journal_names(&journal_research, &slot).await
+}
+
+#[tauri::command]
+pub async fn parse_single_journal(
+    journal_name: String,
+    journal_research: String,
+    positioning_report: String,
+    summary: SummaryResult,
+) -> Result<deep_research::JournalCandidate, String> {
+    let slot = get_assessor_slot()?;
+    deep_research::parse_single_journal(
+        &journal_name, &journal_research, &positioning_report, &summary, &slot,
+    ).await
+}

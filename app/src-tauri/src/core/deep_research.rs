@@ -158,6 +158,89 @@ pub async fn parse_external_results(
     }
 }
 
+pub async fn extract_journal_names(
+    journal_research: &str,
+    slot: &LlmSlot,
+) -> Result<Vec<String>, String> {
+    let messages = prompts::build_extract_journal_names_messages(journal_research);
+    let client = LlmClient::with_timeout(120);
+    let raw = client.chat(slot, &messages, 4096).await?;
+
+    // Try to parse as JSON array of strings
+    let cleaned = try_extract_json_array(&raw);
+    match serde_json::from_str::<Vec<String>>(&cleaned) {
+        Ok(names) => Ok(names),
+        Err(_) => {
+            // Fallback: try to extract from markdown list
+            let names: Vec<String> = raw.lines()
+                .filter_map(|line| {
+                    let trimmed = line.trim();
+                    // Match "1. Journal Name" or "- Journal Name" patterns
+                    if let Some(rest) = trimmed.strip_prefix(|c: char| c.is_ascii_digit() || c == '-' || c == '*') {
+                        let name = rest.trim_start_matches(|c: char| c == '.' || c == ' ' || c == '\t').trim();
+                        if !name.is_empty() && name.len() > 3 {
+                            return Some(name.to_string());
+                        }
+                    }
+                    None
+                })
+                .collect();
+            if names.is_empty() {
+                Err(format!("Failed to extract journal names. Raw response: {}", truncate_str(&raw, 500)))
+            } else {
+                Ok(names)
+            }
+        }
+    }
+}
+
+pub async fn parse_single_journal(
+    journal_name: &str,
+    journal_research: &str,
+    positioning_report: &str,
+    summary: &SummaryResult,
+    slot: &LlmSlot,
+) -> Result<JournalCandidate, String> {
+    let messages = prompts::build_single_journal_parse_messages(
+        journal_name, journal_research, positioning_report, summary,
+    );
+    let client = LlmClient::with_timeout(120);
+    let raw = client.chat(slot, &messages, 4096).await?;
+
+    // Try to parse JSON object
+    let cleaned = try_extract_json_object(&raw);
+    match serde_json::from_str::<JournalCandidate>(&cleaned) {
+        Ok(mut candidate) => {
+            candidate.raw_response = raw;
+            normalize_candidate(&mut candidate);
+            Ok(candidate)
+        }
+        Err(e) => Err(format!("JSON parse failed for '{}': {}. Raw: {}", journal_name, e, truncate_str(&raw, 300))),
+    }
+}
+
+fn try_extract_json_object(text: &str) -> String {
+    // Try markdown code block first
+    if let Some(extracted) = extract_from_code_block(text) {
+        if extracted.starts_with('{') {
+            return extracted;
+        }
+    }
+    // Try finding { ... }
+    if let Some(start) = text.find('{') {
+        if let Some(end) = text.rfind('}') {
+            if end > start {
+                return text[start..=end].to_string();
+            }
+        }
+    }
+    text.to_string()
+}
+
+fn truncate_str(s: &str, max: usize) -> String {
+    if s.len() <= max { s.to_string() } else { format!("{}...", &s[..max]) }
+}
+
 fn normalize_candidate(c: &mut JournalCandidate) {
     if c.match_score == 0 {
         if let Some(num) = parse_match_score(&c.recommendation_level) {
