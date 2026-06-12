@@ -42,6 +42,9 @@ export interface JournalCandidate {
   article_type_fit: string;
   similar_articles: string;
   impact_factor_or_metric: string;
+  quartile_or_rank: string;
+  metric_source: string;
+  metric_year: string;
   apc: string;
   word_limit: string;
   open_access_policy: string;

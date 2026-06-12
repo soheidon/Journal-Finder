@@ -130,13 +130,13 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
                     <table className="journal-table">
                       <thead>
                         <tr>
-                          <th>#</th>
-                          <th>ジャーナル名</th>
-                          <th>出版社</th>
-                          <th>IF/指標</th>
-                          <th>APC</th>
-                          <th>推薦</th>
-                          <th>理由</th>
+                            <th>#</th>
+                            <th>ジャーナル名</th>
+                            <th>マッチ度</th>
+                            <th>指標</th>
+                            <th>APC</th>
+                            <th>推薦</th>
+                            <th>理由</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -145,7 +145,7 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
                             <td>{i + 1}</td>
                             <td><strong>{j.journal_name}</strong></td>
                             <td>{j.publisher}</td>
-                            <td>{j.impact_factor_or_metric}</td>
+                            <td>{j.impact_factor_or_metric !== "未取得" ? j.impact_factor_or_metric : (j.quartile_or_rank || "—")}</td>
                             <td>{j.apc}</td>
                             <td><span className={`rec-${j.recommendation_level.toLowerCase()}`}>{translateRecommendationLevel(j.recommendation_level)}</span></td>
                             <td>{j.reason.length > 60 ? j.reason.substring(0, 60) + "..." : j.reason}</td>

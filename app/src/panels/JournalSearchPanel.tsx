@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { SummaryResult, JournalCandidate, PipelineStatus, ProjectInfo } from "../App";
 import DeepResearchApiRunner from "../components/DeepResearchApiRunner";
-import { translateRecommendationLevel, translateCostRisk, translateApcRequired, translateCostRiskClass } from "../utils/translate";
+import { translateRecommendationLevel, translateCostRisk, translateApcRequired, translateCostRiskClass, formatMetricDisplay } from "../utils/translate";
 
 type SortKey = "match_score" | "cost_risk" | "recommendation";
 type CostFilter = "all" | "low" | "medium" | "no_apc";
@@ -354,7 +354,7 @@ function JournalSearchPanel({
                 <table className="journal-table">
                   <thead>
                     <tr>
-                      <th>#</th><th>ジャーナル名</th><th>マッチ度</th><th>IF/指標</th><th>APC</th><th>掲載方法</th><th>費用リスク</th><th>推薦</th>
+                      <th>#</th><th>ジャーナル名</th><th>マッチ度</th><th>指標</th><th>APC</th><th>掲載方法</th><th>費用リスク</th><th>推薦</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -363,7 +363,7 @@ function JournalSearchPanel({
                         <td>{i + 1}</td>
                         <td><strong>{j.journal_name}</strong></td>
                         <td>{j.match_score}%</td>
-                        <td>{j.impact_factor_or_metric}</td>
+                        <td>{j.impact_factor_or_metric !== "未取得" ? j.impact_factor_or_metric : (j.quartile_or_rank || "—")}</td>
                         <td>{j.apc}</td>
                         <td>{j.publication_route}</td>
                         <td><span className={`cost-${translateCostRiskClass(j.cost_risk_level)}`}>{translateCostRisk(j.cost_risk_level)}</span></td>
@@ -382,7 +382,13 @@ function JournalSearchPanel({
                     <div className="detail-item"><label>スコープ適合</label><p>{selectedJournal.scope_fit}</p></div>
                     <div className="detail-item"><label>記事タイプ適合</label><p>{selectedJournal.article_type_fit}</p></div>
                     <div className="detail-item"><label>類似論文</label><p>{selectedJournal.similar_articles}</p></div>
-                    <div className="detail-item"><label>IF/指標</label><p>{selectedJournal.impact_factor_or_metric}</p></div>
+                    <div className="detail-item"><label>IF/指標</label><p>{selectedJournal.impact_factor_or_metric || "未取得"}</p></div>
+                    {selectedJournal.quartile_or_rank && (
+                      <div className="detail-item"><label>分野ランク</label><p>{selectedJournal.quartile_or_rank}</p></div>
+                    )}
+                    {selectedJournal.metric_source && (
+                      <div className="detail-item"><label>指標ソース</label><p>{selectedJournal.metric_source}</p></div>
+                    )}
                     <div className="detail-item"><label>掲載方法</label><p>{selectedJournal.publication_route}</p></div>
                     <div className="detail-item"><label>APC</label><p>{selectedJournal.apc}</p></div>
                     <div className="detail-item"><label>APC 必須/任意</label><p>{translateApcRequired(selectedJournal.apc_required)}</p></div>

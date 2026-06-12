@@ -245,6 +245,7 @@ fn generate_markdown(summary: &SummaryResult, journals: &[JournalCandidate]) -> 
     lines.push("- **APC（Article Processing Charge）の金額、必須/任意の条件、waiver の有無は変更される可能性があります。投稿前に各ジャーナルの公式サイトで確認してください。**".to_string());
     lines.push("- **掲載方法（Subscription / Hybrid OA / Gold OA）や非 OA 投稿の可否は、出版社のポリシー変更により変わる場合があります。**".to_string());
     lines.push("- **所属機関の Read & Publish 契約（Transformative Agreement）があるかどうかは、大学図書館または機関の研究支援部門に確認してください。**".to_string());
+    lines.push("- **Impact Factor は Clarivate Journal Citation Reports (JCR) 由来の指標であり、外部 Deep Research では取得できない場合があります。Q1/Q2 や SJR は代替指標として表示しています。**".to_string());
     lines.push("- **本レポートの Deep Research 結果は AI による自動推定であり、査読結果や採択可否を保証するものではありません。**".to_string());
     lines.push("- **最終的な投稿先の選定は、研究者自身の判断で行ってください。**".to_string());
     lines.push(String::new());

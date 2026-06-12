@@ -230,7 +230,10 @@ Output a JSON array of objects. Each object must have these exact fields:
     "scope_fit": "スコープの適合度を日本語で説明。例: '95%適合。児童虐待、司法、メンタルヘルスを扱っており、本研究の主題とよく一致する。'",
     "article_type_fit": "記事タイプの適合度を日本語で説明。例: '原著論文としての原著報形式に適合する。'",
     "similar_articles": "類似論文のタイトル（英語のまま）。例: 'Cumulative risk model analysis of physical abuse potential'",
-    "impact_factor_or_metric": "IF, CiteScore, Q1/Q2 等（英語のまま）",
+    "impact_factor_or_metric": "Impact Factor (JIF) の数値。明記されていない場合は '未取得'。推測しない。",
+    "quartile_or_rank": "Q1/Q2/Q3/Q4、SJR、CiteScore 等。IFとは別。",
+    "metric_source": "SCImago / Clarivate JCR / 出版社公式サイト / 出典未確認",
+    "metric_year": "指標の年度。不明なら '不明'",
     "apc": "APC金額（英語のまま）。例: '$3,850', 'Free', '€1,500'",
     "word_limit": "文字数制限",
     "open_access_policy": "Gold OA / Hybrid / Green / Subscription（英語のまま）",
@@ -436,9 +439,18 @@ CRITICAL OUTPUT RULES:
 - apc_required: required / optional / no_apc / unknown (English)
 - Unknown fields: use "" or "不明"
 
+METRIC RULES:
+- Impact Factor (JIF) is a Clarivate JCR metric. If not explicitly stated in the report, use "未取得".
+- Do NOT guess or infer IF from Q1/Q2 or SJR.
+- Q1/Q2/Q3/Q4 are SCImago quartile rankings, NOT Impact Factor. Put them in quartile_or_rank.
+- SJR, CiteScore are separate metrics. Put them in quartile_or_rank.
+- metric_source: "SCImago" / "Clarivate JCR" / "出版社公式サイト" / "出典未確認"
+- metric_year: year of the metric if known, otherwise "不明"
+
 JSON fields:
 journal_name, publisher, scope_fit, article_type_fit, similar_articles,
-impact_factor_or_metric, apc, word_limit, open_access_policy, pros, cons,
+impact_factor_or_metric, quartile_or_rank, metric_source, metric_year,
+apc, word_limit, open_access_policy, pros, cons,
 recommendation_level, reason, source_evidence, match_score, publication_route,
 apc_required, apc_avoidance, recommended_submission_strategy,
 waiver_or_discount_info, cost_risk_level"#

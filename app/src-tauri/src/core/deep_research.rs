@@ -64,6 +64,12 @@ pub struct JournalCandidate {
     #[serde(default)]
     pub impact_factor_or_metric: String,
     #[serde(default)]
+    pub quartile_or_rank: String,
+    #[serde(default)]
+    pub metric_source: String,
+    #[serde(default)]
+    pub metric_year: String,
+    #[serde(default)]
     pub apc: String,
     #[serde(default)]
     pub word_limit: String,
@@ -136,6 +142,9 @@ pub async fn parse_external_results(
                     article_type_fit: String::new(),
                     similar_articles: String::new(),
                     impact_factor_or_metric: String::new(),
+                    quartile_or_rank: String::new(),
+                    metric_source: String::new(),
+                    metric_year: String::new(),
                     apc: String::new(),
                     word_limit: String::new(),
                     open_access_policy: String::new(),
