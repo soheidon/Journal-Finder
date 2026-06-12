@@ -57,17 +57,15 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
   const handleSaveDocx = useCallback(async () => {
     if (!report || !report.docx_base64) return;
     try {
-      const binary = atob(report.docx_base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "journal_finder_report.docx";
-      a.click();
-      URL.revokeObjectURL(url);
-      addLog("Word ファイルをダウンロードしました");
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const path = await save({
+        defaultPath: "journal_finder_report.docx",
+        filters: [{ name: "Word Document", extensions: ["docx"] }],
+      });
+      if (path) {
+        await invoke("save_binary_file", { path, base64Content: report.docx_base64 });
+        addLog(`Word ファイルを保存しました: ${path}`);
+      }
     } catch (e) {
       addLog(`Word 保存エラー: ${e}`);
     }

@@ -28,6 +28,7 @@ fn main() {
             commands::journal::parse_single_journal,
             commands::report::generate_report,
             commands::report::export_report,
+            commands::report::save_binary_file,
             commands::project::create_project,
             commands::project::open_project,
             commands::project::save_project,
