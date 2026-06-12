@@ -40,6 +40,7 @@ function JournalPanel({
   const [selectedJournal, setSelectedJournal] = useState<JournalCandidate | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("match_score");
   const [filterCost, setFilterCost] = useState<CostFilter>("all");
+  const [searchTab, setSearchTab] = useState<"api" | "paste">("paste");
 
   const stSummary = statusLabels[summaryStatus];
   const stSearch = statusLabels[searchStatus];
@@ -82,8 +83,11 @@ function JournalPanel({
         <h3>検索について</h3>
         <p>
           まず論文の構造化要約を生成し、その要約をもとに投稿先ジャーナル候補を検索します。
-          Deep Research は外部 AI（ChatGPT / Perplexity 等）の検索結果を貼り付ける方式で行います。
         </p>
+        <ul>
+          <li><strong>API で Deep Research</strong>: API 経由で自動調査（準備中）</li>
+          <li><strong>外部 Deep Research を利用</strong>: ChatGPT / Perplexity 等の結果を貼り付け</li>
+        </ul>
       </div>
 
       <div className="input-section">
@@ -134,16 +138,55 @@ function JournalPanel({
 
       {summaryResult && summaryStatus === "done" && (
         <div className="input-section">
-          <h3>Step 2: Deep Research（貼り付け方式）</h3>
-          <div className="search-mode-note">
-            <p>外部 AI（ChatGPT / Perplexity / Gemini / Claude 等）の Deep Research 結果を貼り付けて、ジャーナル候補を解析します。</p>
+          <h3>Step 2: ジャーナル検索</h3>
+          <div className="report-tabs">
+            <button className={`report-tab ${searchTab === "api" ? "active" : ""}`} onClick={() => setSearchTab("api")}>API で Deep Research</button>
+            <button className={`report-tab ${searchTab === "paste" ? "active" : ""}`} onClick={() => setSearchTab("paste")}>外部 Deep Research を利用</button>
           </div>
-          <div className="action-row">
-            <button onClick={handleOpenModal}>
-              Deep Research 結果を貼り付け
-            </button>
-            <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
-          </div>
+
+          {searchTab === "api" && (
+            <div className="search-api-section">
+              <p className="hint-text" style={{ marginBottom: 12 }}>
+                API 経由で Deep Research を実行し、引用付きのジャーナル候補を取得します。
+              </p>
+              <div className="form-grid" style={{ maxWidth: 500 }}>
+                <label>プロバイダー</label>
+                <select disabled>
+                  <option>Perplexity Sonar Deep Research</option>
+                  <option>OpenAI Deep Research</option>
+                  <option>Gemini Deep Research Agent</option>
+                  <option>Claude Web Search</option>
+                </select>
+                <label>調査方針</label>
+                <select disabled>
+                  <option>バランス</option>
+                  <option>低APC優先</option>
+                  <option>マッチ度優先</option>
+                  <option>高IFチャレンジ候補も含める</option>
+                </select>
+              </div>
+              <div className="action-row" style={{ marginTop: 12 }}>
+                <button disabled>Deep Research を実行（準備中）</button>
+              </div>
+              <p className="hint-text" style={{ marginTop: 8 }}>
+                ※ API Deep Research は今後実装予定です。現在は「外部 Deep Research を利用」タブをご使用ください。
+              </p>
+            </div>
+          )}
+
+          {searchTab === "paste" && (
+            <div className="search-paste-section">
+              <p className="hint-text" style={{ marginBottom: 12 }}>
+                外部 AI（ChatGPT / Perplexity / Gemini / Claude 等）の Deep Research 結果を貼り付けて、ジャーナル候補を解析します。
+              </p>
+              <div className="action-row">
+                <button onClick={handleOpenModal}>
+                  Deep Research 結果を貼り付け
+                </button>
+                <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
