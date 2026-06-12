@@ -5,7 +5,6 @@ import type { LlmSlotConfig, LlmTestResult, LlmProvider, ApiFormat, ReasoningMod
 interface SettingsPanelProps {
   addLog: (message: string) => void;
   showStatus: (type: "success" | "error" | "info", text: string) => void;
-  onLlmStatusChange: (configured: boolean, testOk: boolean) => void;
   testResults: Record<string, LlmTestResult>;
   onTestResultsChange: (results: Record<string, LlmTestResult>) => void;
 }
@@ -101,7 +100,7 @@ function makeDefault(name: string): LlmSlotConfig {
   };
 }
 
-function SettingsPanel({ addLog, showStatus, onLlmStatusChange, testResults, onTestResultsChange }: SettingsPanelProps) {
+function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }: SettingsPanelProps) {
   const [slots, setSlots] = useState<LlmSlotConfig[]>([makeDefault("summarizer"), makeDefault("journal_assessor")]);
   const [testing, setTesting] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -186,14 +185,6 @@ function SettingsPanel({ addLog, showStatus, onLlmStatusChange, testResults, onT
     }, 1000);
     return () => clearTimeout(timer);
   }, [slots, addLog]);
-
-  // Notify App.tsx about LLM status
-  useEffect(() => {
-    if (!initialLoadDone.current) return;
-    const configured = slots.some(s => !!s.api_key_env);
-    const anyTestOk = Object.values(testResults).some(r => r.ok);
-    onLlmStatusChange(configured, anyTestOk);
-  }, [slots, testResults, onLlmStatusChange]);
 
   const updateSlot = useCallback((index: number, field: keyof LlmSlotConfig, value: unknown) => {
     setSlots(prev => { const next = [...prev]; next[index] = { ...next[index], [field]: value }; return next; });

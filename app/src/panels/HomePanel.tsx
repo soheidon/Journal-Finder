@@ -4,21 +4,16 @@ import type { ActiveView, ProjectInfo } from "../App";
 
 interface HomePanelProps {
   onNavigate: (view: ActiveView) => void;
-  llmConfigured: boolean;
-  llmTestOk: boolean;
   projectInfo: ProjectInfo | null;
   onCreateProject: (name: string, parentDir: string) => void;
   onOpenProject: (path: string) => void;
 }
 
-function HomePanel({ onNavigate, llmConfigured, llmTestOk, projectInfo, onCreateProject, onOpenProject }: HomePanelProps) {
+function HomePanel({ onNavigate, projectInfo, onCreateProject, onOpenProject }: HomePanelProps) {
   const [recentProjects, setRecentProjects] = useState<ProjectInfo[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [parentDir, setParentDir] = useState("");
-
-  const llmLabel = !llmConfigured ? "未設定" : llmTestOk ? "接続済み" : "未テスト";
-  const llmCls = !llmConfigured ? "unrun" : llmTestOk ? "ok" : "warn";
 
   useEffect(() => {
     invoke<ProjectInfo[]>("list_recent_projects").then(setRecentProjects).catch(() => {});
@@ -104,19 +99,6 @@ function HomePanel({ onNavigate, llmConfigured, llmTestOk, projectInfo, onCreate
         )}
       </div>
 
-      {/* System status */}
-      <div className="home-status">
-        <h3>システム状態</h3>
-        <div className="status-row">
-          <span>アプリ機能</span>
-          <span className="status-chip ok">利用可能</span>
-        </div>
-        <div className="status-row">
-          <span>LLM 接続</span>
-          <span className={`status-chip ${llmCls}`}>{llmLabel}</span>
-        </div>
-      </div>
-
       {/* Steps */}
       <div className="home-steps">
         <h3>使い方</h3>
@@ -148,15 +130,6 @@ function HomePanel({ onNavigate, llmConfigured, llmTestOk, projectInfo, onCreate
           </li>
         </ol>
       </div>
-
-      {!llmConfigured && (
-        <div className="home-next-step">
-          次のステップ:{" "}
-          <button className="link-button" onClick={() => onNavigate("settings")}>
-            LLM 設定を行う
-          </button>
-        </div>
-      )}
     </div>
   );
 }

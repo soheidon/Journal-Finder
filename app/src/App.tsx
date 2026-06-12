@@ -130,8 +130,6 @@ function App() {
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [logExpanded, setLogExpanded] = useState(false);
-  const [llmConfigured, setLlmConfigured] = useState(false);
-  const [llmTestOk, setLlmTestOk] = useState(false);
   const [llmTestResults, setLlmTestResults] = useState<Record<string, LlmTestResult>>({});
 
   const addLog = useCallback((message: string) => {
@@ -280,8 +278,6 @@ function App() {
           {activeView === "home" && (
             <HomePanel
               onNavigate={setActiveView}
-              llmConfigured={llmConfigured}
-              llmTestOk={llmTestOk}
               projectInfo={projectInfo}
               onCreateProject={handleCreateProject}
               onOpenProject={handleOpenProject}
@@ -317,7 +313,7 @@ function App() {
             />
           )}
           {activeView === "settings" && (
-            <SettingsPanel addLog={addLog} showStatus={showStatus} onLlmStatusChange={(configured, testOk) => { setLlmConfigured(configured); setLlmTestOk(testOk); }} testResults={llmTestResults} onTestResultsChange={setLlmTestResults} />
+            <SettingsPanel addLog={addLog} showStatus={showStatus} testResults={llmTestResults} onTestResultsChange={setLlmTestResults} />
           )}
         </div>
         <LogPanel logs={logs} expanded={logExpanded} onToggle={() => setLogExpanded(!logExpanded)} onClear={() => setLogs([])} />
