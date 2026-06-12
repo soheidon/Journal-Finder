@@ -94,9 +94,11 @@ const deepResearchPresets: Preset[] = [
   { label: "Perplexity — Sonar Deep Research", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar-deep-research", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
   { label: "Perplexity — Sonar Pro", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar-pro", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
   { label: "Perplexity — Sonar", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
-  // OpenAI Deep Research
-  { label: "OpenAI — o3-deep-research (準備中)", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o3-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
-  { label: "OpenAI — o4-mini-deep-research (準備中)", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o4-mini-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  // OpenAI Deep Research (Responses API — not chat/completions)
+  { label: "OpenAI — o4-mini-deep-research", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o4-mini-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "OpenAI — o3-deep-research", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o3-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "OpenAI — o4-mini-deep-research-2025-06-26", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o4-mini-deep-research-2025-06-26", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "OpenAI — o3-deep-research-2025-06-26", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o3-deep-research-2025-06-26", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
   // Gemini Deep Research
   { label: "Gemini — 3.5 Flash (Deep Research)", provider: "gemini", api_format: "gemini", base_url: "https://generativelanguage.googleapis.com", model: "gemini-3.5-flash", api_key_env: "GEMINI_API_KEY", reasoning_enabled: true, reasoning_mode: "extended", model_list_source: "static" },
   { label: "Gemini — 2.5 Pro (Deep Research)", provider: "gemini", api_format: "gemini", base_url: "https://generativelanguage.googleapis.com", model: "gemini-2.5-pro", api_key_env: "GEMINI_API_KEY", reasoning_enabled: true, reasoning_mode: "standard", model_list_source: "static" },
@@ -370,9 +372,34 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
             <div key={slot.name} className="llm-slot">
               <h4>{slot.name === "analysis_llm" ? "解析 LLM" : "Deep Research API"}</h4>
               {isDeepResearch && (
-                <p className="hint-text" style={{ marginBottom: 8 }}>
-                  API 経由で Web 調査・Deep Research を実施するための設定です。通常のチャット/要約モデルではなく、Deep Research・Web 検索・Grounding 対応モデルのみを選択してください。外部 Deep Research 貼り付け方式だけを使う場合は未設定で構いません。
-                </p>
+                <div className="hint-text" style={{ marginBottom: 8 }}>
+                  <p>
+                    API 経由で Web 調査・Deep Research を実施するための設定です。通常のチャット/要約モデルではなく、Deep Research・Web 検索・Grounding 対応モデルのみを選択してください。外部 Deep Research 貼り付け方式だけを使う場合は未設定で構いません。
+                  </p>
+                  <p style={{ color: "#c19c00", marginTop: 4 }}>
+                    ⚠ Deep Research API は通常の LLM API より高額になる可能性があります。検索回数・引用処理・reasoning tokens・出力トークンに応じて費用が増えます。まずは外部貼り付け方式で試すことを推奨します。
+                  </p>
+                  {slot.provider === "openai" && (
+                    <p style={{ color: "#c19c00", marginTop: 4 }}>
+                      ⚠ OpenAI Deep Research は Responses API を使用します。通常の chat/completions では動作しません。アプリ内実行は未実装です。
+                    </p>
+                  )}
+                  {slot.provider === "perplexity" && (
+                    <p style={{ color: "#888", marginTop: 4 }}>
+                      Perplexity: search queries / citation tokens / reasoning tokens が追加課金されます。
+                    </p>
+                  )}
+                  {slot.provider === "gemini" && (
+                    <p style={{ color: "#888", marginTop: 4 }}>
+                      Gemini: Grounding では検索クエリ数に応じて課金されます。
+                    </p>
+                  )}
+                  {slot.provider === "anthropic" && (
+                    <p style={{ color: "#888", marginTop: 4 }}>
+                      Anthropic: Web search は通常トークン料金とは別に検索回数課金があります。
+                    </p>
+                  )}
+                </div>
               )}
               <div className="slot-layout">
 

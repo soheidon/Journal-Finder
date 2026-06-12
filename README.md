@@ -119,6 +119,19 @@ Gemini / Anthropic / Kimi では、thinking / reasoning モードを設定でき
 
 **注意**: DeepSeek / MiMo / MiniMax では推論モード設定は未対応またはモデル側で自動判定されます。
 
+## Deep Research API の費用注意
+
+Deep Research API は通常の LLM API より高額になる可能性があります。
+
+| Provider | 費用構造 |
+|---|---|
+| Perplexity Sonar Deep Research | 入出力トークン + citation tokens + search queries + reasoning tokens |
+| OpenAI Deep Research | Responses API + web_search tool call（検索回数分加算） |
+| Gemini Grounding | トークン料金 + 検索クエリ数に応じた課金 |
+| Claude Web Search | 通常トークン料金 + Web search $10/1,000 searches |
+
+**推奨**: まずは外部 Deep Research 貼り付け方式（無料）で試し、必要に応じて API 方式を利用してください。
+
 ## 開発
 
 ```bash
