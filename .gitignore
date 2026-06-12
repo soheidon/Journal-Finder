@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node / Tauri
+node_modules/
+app/src-tauri/target/
+app/src-tauri/gen/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets
+.env
+*.pem
+credentials.json
+
+# Claude Code
+.claude/
+
+# Workspaces (user data)
+workspaces/
+e2e_test_project/
+*_test_project/
+work/
+
+# Session logs (canonical copies in docs/implementation_logs/)
+logs/
