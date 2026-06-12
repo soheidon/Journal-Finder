@@ -23,11 +23,8 @@ credentials.json
 # Claude Code
 .claude/
 
-# Workspaces (user data)
-workspaces/
+# Old test data
 e2e_test_project/
-*_test_project/
-work/
 
 # Logs
 logs/
