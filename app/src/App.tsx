@@ -155,9 +155,12 @@ function App() {
       // Save to project folder
       if (projectInfo) {
         try {
-          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "manuscript_text.txt", content: result.raw_text });
-          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "manuscript_text.json", content: JSON.stringify(result, null, 2) });
-          await invoke("save_project", { info: { ...projectInfo, docx_file: docxPath } });
+          // Copy docx to source/
+          await invoke("copy_to_project", { projectDir: projectInfo.path, sourcePath: docxPath, destSubdir: "source", destFilename: "manuscript.docx" });
+          // Save extracted text to data/
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "data/manuscript_text.txt", content: result.raw_text });
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "data/manuscript_text.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project", { info: { ...projectInfo, docx_file: "source/manuscript.docx" } });
           addLog("プロジェクトフォルダに保存しました");
         } catch (_) {}
       }
@@ -181,7 +184,7 @@ function App() {
       // Save to project folder
       if (projectInfo) {
         try {
-          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "summary.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "data/summary.json", content: JSON.stringify(result, null, 2) });
           await invoke("save_project", { info: { ...projectInfo, has_summary: true } });
           addLog("要約をプロジェクトフォルダに保存しました");
         } catch (_) {}
@@ -224,7 +227,7 @@ function App() {
       // Save to project folder
       if (projectInfo) {
         try {
-          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "journals.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "data/journals.json", content: JSON.stringify(result, null, 2) });
           await invoke("save_project", { info: { ...projectInfo, has_journals: true } });
           addLog("ジャーナル候補をプロジェクトフォルダに保存しました");
         } catch (_) {}
@@ -277,7 +280,7 @@ function App() {
 
       // Restore saved data
       try {
-        const manuscriptJson = await invoke<string>("load_project_file", { projectDir: path, filename: "manuscript_text.json" });
+        const manuscriptJson = await invoke<string>("load_project_file", { projectDir: path, filename: "data/manuscript_text.json" });
         const ms = JSON.parse(manuscriptJson) as ManuscriptText;
         setManuscriptText(ms);
         setExtractStatus("done");
@@ -285,7 +288,7 @@ function App() {
       } catch (_) { /* no saved text */ }
 
       try {
-        const summaryJson = await invoke<string>("load_project_file", { projectDir: path, filename: "summary.json" });
+        const summaryJson = await invoke<string>("load_project_file", { projectDir: path, filename: "data/summary.json" });
         const sr = JSON.parse(summaryJson) as SummaryResult;
         setSummaryResult(sr);
         setSummaryStatus("done");
@@ -293,7 +296,7 @@ function App() {
       } catch (_) { /* no saved summary */ }
 
       try {
-        const journalsJson = await invoke<string>("load_project_file", { projectDir: path, filename: "journals.json" });
+        const journalsJson = await invoke<string>("load_project_file", { projectDir: path, filename: "data/journals.json" });
         const js = JSON.parse(journalsJson) as JournalCandidate[];
         setJournals(js);
         setSearchStatus("done");

@@ -28,6 +28,7 @@ fn main() {
             commands::project::save_project,
             commands::project::save_project_file,
             commands::project::load_project_file,
+            commands::project::copy_to_project,
             commands::project::list_recent_projects,
             commands::project::add_recent_project,
         ])

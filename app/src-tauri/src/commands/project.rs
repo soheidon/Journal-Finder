@@ -85,6 +85,15 @@ pub fn load_project_file(project_dir: String, filename: String) -> Result<String
 }
 
 #[tauri::command]
+pub fn copy_to_project(project_dir: String, source_path: String, dest_subdir: String, dest_filename: String) -> Result<String, String> {
+    let dest_dir = Path::new(&project_dir).join(&dest_subdir);
+    fs::create_dir_all(&dest_dir).map_err(|e| format!("フォルダ作成失敗: {}", e))?;
+    let dest_path = dest_dir.join(&dest_filename);
+    fs::copy(&source_path, &dest_path).map_err(|e| format!("ファイルコピー失敗: {}", e))?;
+    Ok(dest_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub fn list_recent_projects() -> Vec<ProjectInfo> {
     let recent_path = recent_projects_path();
     if !recent_path.exists() {
