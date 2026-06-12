@@ -207,35 +207,45 @@ CRITICAL OUTPUT RULES:
 - match_score must be a number 0-100 (NOT a string. Example: 96, not "96")
 - Return ONLY a JSON array. No markdown fences, no explanations.
 - All fields are required for each candidate. Use null or "unknown" if information is not available.
-- Journal names and publisher names must be in English.
-- Include ALL candidates — do NOT limit the number.
+
+LANGUAGE RULES:
+- journal_name, publisher: English (original names)
+- similar_articles: English (original titles)
+- impact_factor_or_metric: English (Q1, IF 5.2, etc.)
+- apc: English with currency symbols ($3,850, Free, etc.)
+- publication_route: English (Subscription, Hybrid OA, Gold OA, etc.)
+- scope_fit, article_type_fit, pros, cons, reason: JAPANESE
+- apc_avoidance, recommended_submission_strategy, waiver_or_discount_info: JAPANESE
+- recommendation_level: English internal value (Strong / Moderate / Weak) — will be translated on display
+- cost_risk_level: English internal value (low / medium / high / unknown) — will be translated on display
+- apc_required: English internal value (required / optional / no_apc / unknown) — will be translated on display
 
 {merge_instruction}
 
 Output a JSON array of objects. Each object must have these exact fields:
 [
   {{
-    "journal_name": "Full official journal name",
-    "publisher": "Publisher name",
-    "scope_fit": "How well the journal scope matches this research",
-    "article_type_fit": "Does this journal accept this article type",
-    "similar_articles": "Examples of similar articles in this journal",
-    "impact_factor_or_metric": "IF, CiteScore, or other metric",
-    "apc": "Article processing charge amount (e.g. '$2,000', 'Free', '€1,500')",
-    "word_limit": "Manuscript word limit",
-    "open_access_policy": "Gold OA / Hybrid / Green / Subscription",
-    "pros": "Advantages of submitting here",
-    "cons": "Disadvantages or risks",
-    "recommendation_level": "Strong / Moderate / Weak",
-    "reason": "1-2 sentence reason why this journal fits",
-    "source_evidence": "Evidence supporting this recommendation",
-    "match_score": "0-100 integer score representing how well the manuscript fits this journal",
-    "publication_route": "Possible publication routes: Subscription/traditional, Hybrid OA, Gold OA, Green OA/self-archiving, etc.",
-    "apc_required": "APC status: 'required' (APC mandatory), 'optional' (APC optional for OA), 'no_apc' (no APC needed), or 'unknown'",
-    "apc_avoidance": "Can APC be avoided? E.g. 'APCなしで投稿・掲載可能', 'Hybrid誌だが非OA選択可', 'Gold OAのためAPC必須', 'waiver可能性あり', '要確認'",
-    "recommended_submission_strategy": "Cost-optimal strategy in Japanese. E.g. 'Open Accessを選ばず、通常投稿として出す', 'APC必須のため研究費がない場合は優先度を下げる', etc.",
-    "waiver_or_discount_info": "Waiver/discount availability. E.g. 'APC waiver対象の可能性あり', '機関契約あり', '低所得国waiverあり', '情報なし'",
-    "cost_risk_level": "Cost risk: 'low' (free or avoidable), 'medium' (optional APC or waiver possible), 'high' (mandatory APC), 'unknown'"
+    "journal_name": "Full official journal name (English)",
+    "publisher": "Publisher name (English)",
+    "scope_fit": "スコープの適合度を日本語で説明。例: '95%適合。児童虐待、司法、メンタルヘルスを扱っており、本研究の主題とよく一致する。'",
+    "article_type_fit": "記事タイプの適合度を日本語で説明。例: '原著論文としての原著報形式に適合する。'",
+    "similar_articles": "類似論文のタイトル（英語のまま）。例: 'Cumulative risk model analysis of physical abuse potential'",
+    "impact_factor_or_metric": "IF, CiteScore, Q1/Q2 等（英語のまま）",
+    "apc": "APC金額（英語のまま）。例: '$3,850', 'Free', '€1,500'",
+    "word_limit": "文字数制限",
+    "open_access_policy": "Gold OA / Hybrid / Green / Subscription（英語のまま）",
+    "pros": "メリットを日本語で説明",
+    "cons": "デメリットを日本語で説明",
+    "recommendation_level": "Strong / Moderate / Weak（英語のまま）",
+    "reason": "推薦理由を日本語で1〜2文",
+    "source_evidence": "根拠を日本語または英語で",
+    "match_score": 96,
+    "publication_route": "掲載方法を日本語で。例: 'Hybrid誌（購読モデルまたはOA選択可）'",
+    "apc_required": "required / optional / no_apc / unknown（英語のまま）",
+    "apc_avoidance": "APC回避の可能性を日本語で説明。例: '非OAのサブスクリプションモデルを選択することでAPCは0円となる。'",
+    "recommended_submission_strategy": "推奨投稿方法を日本語で。例: 'Open Accessを選ばず、通常投稿として出す'",
+    "waiver_or_discount_info": "waiver/割引情報を日本語で。例: 'APC waiver対象の可能性あり'",
+    "cost_risk_level": "low / medium / high / unknown（英語のまま）"
   }}
 ]"#
     );

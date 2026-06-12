@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { SummaryResult, JournalCandidate, PipelineStatus, ProjectInfo } from "../App";
 import DeepResearchApiRunner from "../components/DeepResearchApiRunner";
+import { translateRecommendationLevel, translateCostRisk, translateApcRequired, translateCostRiskClass } from "../utils/translate";
 
 type SortKey = "match_score" | "cost_risk" | "recommendation";
 type CostFilter = "all" | "low" | "medium" | "no_apc";
@@ -281,8 +282,8 @@ function JournalSearchPanel({
                         <td>{j.impact_factor_or_metric}</td>
                         <td>{j.apc}</td>
                         <td>{j.publication_route}</td>
-                        <td><span className={`cost-${j.cost_risk_level}`}>{j.cost_risk_level}</span></td>
-                        <td><span className={`rec-${j.recommendation_level.toLowerCase()}`}>{j.recommendation_level}</span></td>
+                        <td><span className={`cost-${translateCostRiskClass(j.cost_risk_level)}`}>{translateCostRisk(j.cost_risk_level)}</span></td>
+                        <td><span className={`rec-${j.recommendation_level.toLowerCase()}`}>{translateRecommendationLevel(j.recommendation_level)}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -300,16 +301,16 @@ function JournalSearchPanel({
                     <div className="detail-item"><label>IF/指標</label><p>{selectedJournal.impact_factor_or_metric}</p></div>
                     <div className="detail-item"><label>掲載方法</label><p>{selectedJournal.publication_route}</p></div>
                     <div className="detail-item"><label>APC</label><p>{selectedJournal.apc}</p></div>
-                    <div className="detail-item"><label>APC 必須/任意</label><p>{selectedJournal.apc_required}</p></div>
+                    <div className="detail-item"><label>APC 必須/任意</label><p>{translateApcRequired(selectedJournal.apc_required)}</p></div>
                     <div className="detail-item"><label>APC 回避の可能性</label><p>{selectedJournal.apc_avoidance}</p></div>
                     <div className="detail-item"><label>waiver / 割引情報</label><p>{selectedJournal.waiver_or_discount_info}</p></div>
-                    <div className="detail-item"><label>費用リスク</label><p><span className={`cost-${selectedJournal.cost_risk_level}`}>{selectedJournal.cost_risk_level}</span></p></div>
+                    <div className="detail-item"><label>費用リスク</label><p><span className={`cost-${translateCostRiskClass(selectedJournal.cost_risk_level)}`}>{translateCostRisk(selectedJournal.cost_risk_level)}</span></p></div>
                     <div className="detail-item"><label>推奨投稿方法</label><p>{selectedJournal.recommended_submission_strategy}</p></div>
                     <div className="detail-item"><label>文字数制限</label><p>{selectedJournal.word_limit}</p></div>
                     <div className="detail-item"><label>OA ポリシー</label><p>{selectedJournal.open_access_policy}</p></div>
                     <div className="detail-item"><label>メリット</label><p>{selectedJournal.pros}</p></div>
                     <div className="detail-item"><label>デメリット</label><p>{selectedJournal.cons}</p></div>
-                    <div className="detail-item"><label>推薦レベル</label><p><span className={`rec-${selectedJournal.recommendation_level.toLowerCase()}`}>{selectedJournal.recommendation_level}</span></p></div>
+                    <div className="detail-item"><label>推薦レベル</label><p><span className={`rec-${selectedJournal.recommendation_level.toLowerCase()}`}>{translateRecommendationLevel(selectedJournal.recommendation_level)}</span></p></div>
                     <div className="detail-item"><label>推薦理由</label><p>{selectedJournal.reason}</p></div>
                     <div className="detail-item"><label>根拠</label><p>{selectedJournal.source_evidence}</p></div>
                   </div>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { SummaryResult, JournalCandidate, ReportData } from "../App";
+import { translateRecommendationLevel, translateCostRisk } from "../utils/translate";
 
 interface ResultsPanelProps {
   summaryResult: SummaryResult | null;
@@ -146,7 +147,7 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
                             <td>{j.publisher}</td>
                             <td>{j.impact_factor_or_metric}</td>
                             <td>{j.apc}</td>
-                            <td><span className={`rec-${j.recommendation_level.toLowerCase()}`}>{j.recommendation_level}</span></td>
+                            <td><span className={`rec-${j.recommendation_level.toLowerCase()}`}>{translateRecommendationLevel(j.recommendation_level)}</span></td>
                             <td>{j.reason.length > 60 ? j.reason.substring(0, 60) + "..." : j.reason}</td>
                           </tr>
                         ))}
