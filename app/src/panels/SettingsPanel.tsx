@@ -341,7 +341,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
       <div className="input-section info-card">
         <h3>API 設定について</h3>
         <p>
-          Journal Finder は LLM（大規模言語モデル）を使って論文の要約とジャーナル推薦を行います。
+          論文投稿先アドバイザ は LLM（大規模言語モデル）を使って論文の要約とジャーナル推薦を行います。
           2 つのスロットを設定してください。
         </p>
         <ul>

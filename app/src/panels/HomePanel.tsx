@@ -44,7 +44,7 @@ function HomePanel({ onNavigate, projectInfo, onCreateProject, onOpenProject }: 
 
   return (
     <div className="panel home-panel">
-      <h2>Journal Finder</h2>
+      <h2>論文投稿先アドバイザ</h2>
       <p className="home-description">
         論文原稿を入力し、投稿先ジャーナル候補を推薦するツールです。
       </p>
