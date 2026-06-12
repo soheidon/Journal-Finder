@@ -406,6 +406,7 @@ function App() {
               summaryStatus={summaryStatus}
               positioningPrompt={positioningPrompt}
               positioningResult={positioningResult}
+              projectInfo={projectInfo}
               onGetPositioningPrompt={handleGetPositioningPrompt}
               onSetPositioningResult={setPositioningResult}
               onNavigateToJournalSearch={() => setActiveView("journal_search")}
@@ -419,6 +420,7 @@ function App() {
               journals={journals}
               searchStatus={searchStatus}
               journalSearchPrompt={journalSearchPrompt}
+              projectInfo={projectInfo}
               onGetJournalSearchPrompt={handleGetJournalSearchPrompt}
               onParseExternalResults={handleParseExternalResults}
               onNavigateToPositioning={() => setActiveView("positioning")}

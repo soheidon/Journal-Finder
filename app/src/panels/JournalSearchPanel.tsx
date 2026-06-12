@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import type { SummaryResult, JournalCandidate, PipelineStatus } from "../App";
+import { useState, useMemo, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import type { SummaryResult, JournalCandidate, PipelineStatus, ProjectInfo } from "../App";
 import DeepResearchApiRunner from "../components/DeepResearchApiRunner";
 
 type SortKey = "match_score" | "cost_risk" | "recommendation";
@@ -12,6 +13,7 @@ interface JournalSearchPanelProps {
   journals: JournalCandidate[];
   searchStatus: PipelineStatus;
   journalSearchPrompt: string;
+  projectInfo: ProjectInfo | null;
   onGetJournalSearchPrompt: () => void;
   onParseExternalResults: (externalA: string, externalB: string) => void;
   onNavigateToPositioning: () => void;
@@ -34,6 +36,7 @@ function JournalSearchPanel({
   journals,
   searchStatus,
   journalSearchPrompt,
+  projectInfo,
   onGetJournalSearchPrompt,
   onParseExternalResults,
   onNavigateToPositioning,
@@ -44,10 +47,13 @@ function JournalSearchPanel({
   const [searchTab, setSearchTab] = useState<"api" | "paste">("paste");
   const [copied, setCopied] = useState(false);
   const [externalA, setExternalA] = useState("");
-  const [externalB, setExternalB] = useState("");
+  const [savedContent, setSavedContent] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const stSearch = statusLabels[searchStatus];
   const ready = summaryResult && summaryStatus === "done";
+  const isSaved = savedContent === externalA && externalA.length > 0;
+  const hasUnsavedChanges = externalA.length > 0 && !isSaved;
 
   const sortedJournals = useMemo(() => {
     let filtered = [...journals];
@@ -66,6 +72,42 @@ function JournalSearchPanel({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleSave = async () => {
+    if (!projectInfo || !externalA.trim()) return;
+    setSaving(true);
+    try {
+      await invoke("save_project_file", {
+        projectDir: projectInfo.path,
+        filename: "data/journal_research.md",
+        content: externalA,
+      });
+      setSavedContent(externalA);
+    } catch (_) {}
+    setSaving(false);
+  };
+
+  const handleParse = async () => {
+    if (!externalA.trim()) return;
+    if (hasUnsavedChanges) {
+      if (!confirm("未保存の変更があります。保存してから解析しますか？")) return;
+      await handleSave();
+    }
+    onParseExternalResults(externalA, "");
+  };
+
+  // Load saved content on mount
+  useEffect(() => {
+    if (!projectInfo) return;
+    invoke<string>("load_project_file", { projectDir: projectInfo.path, filename: "data/journal_research.md" })
+      .then(content => {
+        if (content) {
+          setSavedContent(content);
+          if (!externalA) setExternalA(content);
+        }
+      })
+      .catch(() => {});
+  }, [projectInfo]);
 
   return (
     <div className="panel">
@@ -93,8 +135,8 @@ function JournalSearchPanel({
               </p>
             ) : (
               <p className="hint-text" style={{ color: "#c19c00" }}>
-                ⚠ 立ち位置調査結果がありません。論文要約のみでジャーナル調査を行います。候補の精度が下がる可能性があります。
-                <button className="link-button" style={{ marginLeft: 8 }} onClick={onNavigateToPositioning}>
+                ⚠ 立ち位置調査結果がありません。論文要約のみでジャーナル調査を行います。候補の精度が下がる可能性があります。{" "}
+                <button className="link-button" onClick={onNavigateToPositioning}>
                   立ち位置調査へ戻る
                 </button>
               </p>
@@ -148,35 +190,47 @@ function JournalSearchPanel({
             )}
           </div>
 
-          {searchTab === "paste" && journalSearchPrompt && (
+          {/* Result textarea */}
+          <div className="input-section">
+            <h3>ジャーナル調査結果</h3>
+            <p className="hint-text">
+              {searchTab === "paste"
+                ? "外部 AI の Deep Research 結果を以下のテキストエリアに貼り付けてください。"
+                : "API 実行結果が自動反映されます。確認・編集してください。"}
+            </p>
+            <textarea
+              className="result-textarea"
+              value={externalA}
+              onChange={e => setExternalA(e.target.value)}
+              placeholder="ジャーナル候補の検索結果をここに貼り付けてください..."
+              rows={12}
+            />
+            <div className="action-row" style={{ marginTop: 8 }}>
+              <button onClick={handleSave} disabled={!externalA.trim() || saving || isSaved}>
+                {saving ? "保存中..." : isSaved ? "保存済み ✓" : "ジャーナル調査結果を保存"}
+              </button>
+              {hasUnsavedChanges && (
+                <span className="status-chip warn">未保存の変更あり</span>
+              )}
+              {isSaved && (
+                <span className="status-chip ok">保存済み</span>
+              )}
+            </div>
+          </div>
+
+          {/* Parse section */}
+          {isSaved && (
             <div className="input-section">
-              <h3>結果を貼り戻して解析</h3>
-              <label style={{ display: "block", fontSize: 13, color: "#555", marginBottom: 4 }}>
-                外部 AI の Deep Research 結果:
-              </label>
-              <textarea
-                className="result-textarea"
-                value={externalA}
-                onChange={e => setExternalA(e.target.value)}
-                placeholder="ジャーナル候補の検索結果をここに貼り付けてください..."
-                rows={8}
-              />
-              <label style={{ display: "block", fontSize: 12, color: "#888", marginTop: 8, marginBottom: 4 }}>
-                2つ目の AI 結果（任意）:
-              </label>
-              <textarea
-                className="result-textarea"
-                value={externalB}
-                onChange={e => setExternalB(e.target.value)}
-                placeholder="別の AI で同じプロンプトを実行した場合の結果（任意）..."
-                rows={5}
-              />
-              <div className="action-row" style={{ marginTop: 12 }}>
+              <h3>解析</h3>
+              <p className="hint-text">
+                保存済みのジャーナル調査結果を解析し、候補ジャーナルを生成します。
+              </p>
+              <div className="action-row">
                 <button
-                  onClick={() => onParseExternalResults(externalA, externalB)}
-                  disabled={!externalA.trim() || searchStatus === "in_progress"}
+                  onClick={handleParse}
+                  disabled={searchStatus === "in_progress"}
                 >
-                  {searchStatus === "in_progress" ? "解析中..." : "貼り付け結果を解析"}
+                  {searchStatus === "in_progress" ? "解析中..." : "保存済み結果を解析して候補を生成"}
                 </button>
                 <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
               </div>

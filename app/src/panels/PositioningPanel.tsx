@@ -1,5 +1,6 @@
-import { useState } from "react";
-import type { SummaryResult, PipelineStatus } from "../App";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import type { SummaryResult, PipelineStatus, ProjectInfo } from "../App";
 import DeepResearchApiRunner from "../components/DeepResearchApiRunner";
 
 interface PositioningPanelProps {
@@ -7,6 +8,7 @@ interface PositioningPanelProps {
   summaryStatus: PipelineStatus;
   positioningPrompt: string;
   positioningResult: string;
+  projectInfo: ProjectInfo | null;
   onGetPositioningPrompt: () => void;
   onSetPositioningResult: (result: string) => void;
   onNavigateToJournalSearch: () => void;
@@ -17,18 +19,51 @@ function PositioningPanel({
   summaryStatus,
   positioningPrompt,
   positioningResult,
+  projectInfo,
   onGetPositioningPrompt,
   onSetPositioningResult,
   onNavigateToJournalSearch,
 }: PositioningPanelProps) {
   const [copied, setCopied] = useState(false);
   const [searchTab, setSearchTab] = useState<"paste" | "api">("paste");
+  const [savedContent, setSavedContent] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const isSaved = savedContent === positioningResult && positioningResult.length > 0;
+  const hasUnsavedChanges = positioningResult.length > 0 && !isSaved;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(positioningPrompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleSave = async () => {
+    if (!projectInfo || !positioningResult.trim()) return;
+    setSaving(true);
+    try {
+      await invoke("save_project_file", {
+        projectDir: projectInfo.path,
+        filename: "data/positioning_research.md",
+        content: positioningResult,
+      });
+      setSavedContent(positioningResult);
+    } catch (_) {}
+    setSaving(false);
+  };
+
+  // Load saved content on mount
+  useEffect(() => {
+    if (!projectInfo) return;
+    invoke<string>("load_project_file", { projectDir: projectInfo.path, filename: "data/positioning_research.md" })
+      .then(content => {
+        if (content) {
+          setSavedContent(content);
+          if (!positioningResult) onSetPositioningResult(content);
+        }
+      })
+      .catch(() => {});
+  }, [projectInfo]);
 
   const ready = summaryResult && summaryStatus === "done";
 
@@ -113,10 +148,21 @@ function PositioningPanel({
               placeholder="立ち位置調査結果がここに表示されます..."
               rows={12}
             />
-            {positioningResult && (
+            <div className="action-row" style={{ marginTop: 8 }}>
+              <button onClick={handleSave} disabled={!positioningResult.trim() || saving || isSaved}>
+                {saving ? "保存中..." : isSaved ? "保存済み ✓" : "立ち位置調査結果を保存"}
+              </button>
+              {hasUnsavedChanges && (
+                <span className="status-chip warn">未保存の変更あり</span>
+              )}
+              {isSaved && (
+                <span className="status-chip ok">保存済み</span>
+              )}
+            </div>
+            {isSaved && (
               <>
                 <p className="hint-text" style={{ color: "#107c10", marginTop: 8 }}>
-                  ✓ 立ち位置調査結果が保存されました。次の「ジャーナル調査」画面に進んでください。
+                  ✓ 保存済み：この立ち位置調査結果はジャーナル調査に使用されます。
                 </p>
                 <div className="action-row" style={{ marginTop: 8 }}>
                   <button onClick={onNavigateToJournalSearch}>
