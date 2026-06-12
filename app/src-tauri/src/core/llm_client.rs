@@ -164,12 +164,21 @@ impl LlmClient {
             .map(|m| serde_json::json!({"role": m.role, "content": m.content}))
             .collect();
 
+        // OpenAI GPT-5+ and reasoning models require max_completion_tokens instead of max_tokens
+        let is_openai_native = slot.provider == "openai"
+            && slot.base_url.contains("api.openai.com");
+
         let mut body = serde_json::json!({
             "model": slot.model,
             "messages": msgs,
-            "max_tokens": max_tokens,
             "temperature": 0.3,
         });
+
+        if is_openai_native {
+            body["max_completion_tokens"] = serde_json::json!(max_tokens);
+        } else {
+            body["max_tokens"] = serde_json::json!(max_tokens);
+        }
 
         if slot.reasoning_enabled && slot.reasoning_mode != "off" {
             match slot.reasoning_mode.as_str() {
@@ -401,11 +410,19 @@ impl LlmClient {
     }
 
     async fn test_openai_direct(&self, slot: &LlmSlot, url: &str) -> Result<LlmTestResult, String> {
-        let body = serde_json::json!({
+        let is_openai_native = slot.provider == "openai"
+            && slot.base_url.contains("api.openai.com");
+
+        let mut body = serde_json::json!({
             "model": slot.model,
             "messages": [{"role": "user", "content": "Say OK"}],
-            "max_tokens": 32,
         });
+
+        if is_openai_native {
+            body["max_completion_tokens"] = serde_json::json!(32);
+        } else {
+            body["max_tokens"] = serde_json::json!(32);
+        }
 
         let resp = self.http.post(url)
             .header("Authorization", format!("Bearer {}", slot.api_key))

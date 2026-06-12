@@ -62,7 +62,7 @@ export interface JournalCandidate {
 
 export type PipelineStatus = "not_started" | "in_progress" | "done" | "failed";
 
-export type LlmProvider = "openai" | "anthropic" | "deepseek" | "openrouter" | "ollama" | "gemini" | "kimi" | "mimo" | "minimax" | "custom";
+export type LlmProvider = "openai" | "anthropic" | "deepseek" | "openrouter" | "ollama" | "gemini" | "kimi" | "mimo" | "minimax" | "perplexity" | "custom";
 export type ApiFormat = "openai_compatible" | "anthropic" | "gemini" | "ollama";
 export type ReasoningMode = "off" | "standard" | "extended" | "max" | "custom";
 

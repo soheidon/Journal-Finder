@@ -31,6 +31,7 @@ const providerMeta: Record<LlmProvider, { label: string; api_format: ApiFormat; 
   kimi: { label: "Kimi", api_format: "openai_compatible", base_url: "https://api.moonshot.cn/v1", env_var: "MOONSHOT_API_KEY", model_list: "static" },
   mimo: { label: "Xiaomi MiMo", api_format: "openai_compatible", base_url: "https://api.mimo.xiaomi.com/v1", env_var: "MIMO_API_KEY", model_list: "static" },
   minimax: { label: "MiniMax", api_format: "openai_compatible", base_url: "https://api.minimax.chat/v1", env_var: "MINIMAX_API_KEY", model_list: "static" },
+  perplexity: { label: "Perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", env_var: "PERPLEXITY_API_KEY", model_list: "static" },
   custom: { label: "Custom", api_format: "openai_compatible", base_url: "", env_var: "", model_list: "static" },
 };
 
@@ -83,6 +84,25 @@ const presets: Preset[] = [
   // Ollama
   { label: "Ollama — llama3.3", provider: "ollama", api_format: "ollama", base_url: "http://localhost:11434/v1", model: "llama3.3", api_key_env: "", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "local" },
   { label: "Ollama — qwen3", provider: "ollama", api_format: "ollama", base_url: "http://localhost:11434/v1", model: "qwen3", api_key_env: "", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "local" },
+];
+
+// Deep Research API presets — only Deep Research / Web Search capable models
+const deepResearchPresets: Preset[] = [
+  // Perplexity Sonar Deep Research
+  { label: "Perplexity — Sonar Deep Research", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar-deep-research", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "Perplexity — Sonar Pro", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar-pro", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "Perplexity — Sonar", provider: "perplexity", api_format: "openai_compatible", base_url: "https://api.perplexity.ai", model: "sonar", api_key_env: "PERPLEXITY_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  // OpenAI Deep Research
+  { label: "OpenAI — o3-deep-research (準備中)", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o3-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "OpenAI — o4-mini-deep-research (準備中)", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "o4-mini-deep-research", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  // Gemini Deep Research
+  { label: "Gemini — 3.5 Flash (Deep Research)", provider: "gemini", api_format: "gemini", base_url: "https://generativelanguage.googleapis.com", model: "gemini-3.5-flash", api_key_env: "GEMINI_API_KEY", reasoning_enabled: true, reasoning_mode: "extended", model_list_source: "static" },
+  { label: "Gemini — 2.5 Pro (Deep Research)", provider: "gemini", api_format: "gemini", base_url: "https://generativelanguage.googleapis.com", model: "gemini-2.5-pro", api_key_env: "GEMINI_API_KEY", reasoning_enabled: true, reasoning_mode: "standard", model_list_source: "static" },
+  // Anthropic Claude Web Search
+  { label: "Claude — Sonnet 4.6 (Web Search)", provider: "anthropic", api_format: "anthropic", base_url: "https://api.anthropic.com", model: "claude-sonnet-4-6", api_key_env: "ANTHROPIC_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  { label: "Claude — Opus 4.8 (Web Search)", provider: "anthropic", api_format: "anthropic", base_url: "https://api.anthropic.com", model: "claude-opus-4-8", api_key_env: "ANTHROPIC_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
+  // Custom
+  { label: "Custom Search + LLM (準備中)", provider: "custom", api_format: "openai_compatible", base_url: "", model: "", api_key_env: "", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "static" },
 ];
 
 function makeDefault(name: string): LlmSlotConfig {
@@ -209,8 +229,10 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
   }, []);
 
   const handleProviderChange = useCallback((index: number, provider: LlmProvider) => {
-    const meta = providerMeta[provider];
-    const firstPreset = allPresets.find(p => p.provider === provider);
+    const meta = providerMeta[provider] || providerMeta["custom"];
+    const slotName = slots[index]?.name || "";
+    const relevantPresets = slotName === "deep_research_provider" ? deepResearchPresets : allPresets;
+    const firstPreset = relevantPresets.find(p => p.provider === provider);
     setSlots(prev => {
       const next = [...prev];
       next[index] = {
@@ -296,7 +318,19 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
 
   if (loading) return <div className="panel settings-panel"><p className="hint-text">読み込み中...</p></div>;
 
-  const providerPresets = (provider: LlmProvider) => allPresets.filter(p => p.provider === provider);
+  const providerPresets = (provider: LlmProvider, slotName: string) => {
+    if (slotName === "deep_research_provider") {
+      return deepResearchPresets.filter(p => p.provider === provider || provider === "custom");
+    }
+    return allPresets.filter(p => p.provider === provider);
+  };
+
+  const getPresetsForSlot = (slotName: string) => {
+    if (slotName === "deep_research_provider") {
+      return deepResearchPresets;
+    }
+    return allPresets;
+  };
 
   return (
     <div className="panel settings-panel">
@@ -324,13 +358,20 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
           const isTesting = testing[slot.name];
           const modelList = modelListResults[slot.name];
           const isFetching = fetchingModels[slot.name];
-          const meta = providerMeta[slot.provider];
+          const meta = providerMeta[slot.provider] || providerMeta["custom"];
           const showReasoning = ["gemini", "anthropic", "kimi"].includes(slot.provider);
-          const availablePresets = providerPresets(slot.provider);
+          const isDeepResearch = slot.name === "deep_research_provider";
+          const slotPresets = getPresetsForSlot(slot.name);
+          const availablePresets = slotPresets.filter(p => p.provider === slot.provider || (isDeepResearch && slot.provider === "custom"));
 
           return (
             <div key={slot.name} className="llm-slot">
               <h4>{slot.name === "analysis_llm" ? "解析 LLM" : "Deep Research API"}</h4>
+              {isDeepResearch && (
+                <p className="hint-text" style={{ marginBottom: 8 }}>
+                  API 経由で Web 調査・Deep Research を実施するための設定です。通常のチャット/要約モデルではなく、Deep Research・Web 検索・Grounding 対応モデルのみを選択してください。外部 Deep Research 貼り付け方式だけを使う場合は未設定で構いません。
+                </p>
+              )}
               <div className="slot-layout">
 
                 {/* Left: Settings */}
@@ -377,7 +418,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                     <label>環境変数名</label>
                     <input type="text" value={slot.api_key_env} onChange={e => updateSlot(index, "api_key_env", e.target.value)} placeholder={meta.env_var || "KEY_NAME"} />
 
-                    {meta.model_list !== "static" && (
+                    {meta.model_list !== "static" && !isDeepResearch && (
                       <>
                         <label></label>
                         <div className="model-row">
