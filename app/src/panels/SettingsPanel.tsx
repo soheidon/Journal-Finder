@@ -50,6 +50,8 @@ const reasoningModeOptions: { value: ReasoningMode; label: string }[] = [
   { value: "custom", label: "Custom Budget" },
 ];
 
+const deepResearchProviders: LlmProvider[] = ["openai", "perplexity", "gemini", "anthropic", "openrouter", "custom"];
+
 const presets: Preset[] = [
   // OpenAI
   { label: "OpenAI — gpt-5.5", provider: "openai", api_format: "openai_compatible", base_url: "https://api.openai.com/v1", model: "gpt-5.5", api_key_env: "OPENAI_API_KEY", reasoning_enabled: false, reasoning_mode: "off", model_list_source: "api" },
@@ -379,7 +381,9 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                   <div className="form-grid">
                     <label>Provider</label>
                     <select value={slot.provider} onChange={e => handleProviderChange(index, e.target.value as LlmProvider)}>
-                      {Object.entries(providerMeta).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      {Object.entries(providerMeta)
+                        .filter(([k]) => isDeepResearch ? deepResearchProviders.includes(k as LlmProvider) : k !== "perplexity")
+                        .map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
 
                     <label>モデル</label>
