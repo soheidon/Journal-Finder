@@ -85,13 +85,18 @@ function JournalSearchPanel({
           <div className="input-section">
             <h3>調査方式</h3>
             <div className="report-tabs">
-              <button className={`report-tab ${searchTab === "api" ? "active" : ""}`} onClick={() => setSearchTab("api")}>API で実行</button>
-              <button className={`report-tab ${searchTab === "paste" ? "active" : ""}`} onClick={() => setSearchTab("paste")}>外部 Deep Research を利用</button>
+              <button className={`report-tab ${searchTab === "paste" ? "active" : ""}`} onClick={() => setSearchTab("paste")}>外部 Deep Research を利用（推奨）</button>
+              <button className={`report-tab ${searchTab === "api" ? "active" : ""}`} onClick={() => setSearchTab("api")}>API で実行（上級者向け）</button>
             </div>
 
             {searchTab === "api" && (
               <div style={{ padding: "12px 0" }}>
-                <p className="hint-text">API Deep Research は今後実装予定です。</p>
+                <p className="hint-text">
+                  上級者向け: API 経由で Deep Research を実行します。検索回数、reasoning tokens、引用処理などにより高額になる可能性があります。
+                </p>
+                <p className="hint-text" style={{ color: "#c19c00", marginTop: 4 }}>
+                  ⚠ OpenAI Deep Research は Responses API を使用します（chat/completions では動作しません）。アプリ内実行は未実装です。
+                </p>
                 <button disabled style={{ marginTop: 8 }}>Deep Research を実行（準備中）</button>
               </div>
             )}
@@ -100,8 +105,7 @@ function JournalSearchPanel({
               <div style={{ paddingTop: 12 }}>
                 <h4>プロンプト生成</h4>
                 <p className="hint-text">
-                  ジャーナル調査用プロンプトを生成し、外部 AI の Deep Research に貼り付けてください。
-                  {positioningResult ? " 立ち位置調査の結果が含まれます。" : " 立ち位置調査の結果がないため、要約のみで生成します。"}
+                  推奨: 外部 Deep Research を利用します。API 課金を抑えながら、ChatGPT / Perplexity / Gemini / Claude 等の Deep Research 結果を貼り付けて解析します。
                 </p>
                 <div className="action-row">
                   <button onClick={onGetJournalSearchPrompt}>
