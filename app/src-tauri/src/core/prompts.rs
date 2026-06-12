@@ -265,3 +265,60 @@ Output a JSON array of objects. Each object must have these exact fields:
         },
     ]
 }
+
+pub fn build_deep_research_api_prompt(
+    summary: &SummaryResult,
+    positioning_report: &str,
+) -> String {
+    let keywords = summary.keywords_for_search.join(", ");
+    let positioning_section = if positioning_report.is_empty() {
+        "(Positioning report not available.)".to_string()
+    } else {
+        positioning_report.to_string()
+    };
+
+    format!(
+        r#"You are a research assistant specializing in academic journal selection.
+Find suitable submission journals for the manuscript below.
+
+## Manuscript Summary
+- Research Topic: {topic}
+- Objective: {objective}
+- Sample: {sample}
+- Design: {design}
+- Methods: {methods}
+- Findings: {findings}
+- Keywords: {keywords}
+
+## Prior Research Positioning
+{positioning}
+
+## Task
+Search for academic journals that would be good submission targets. For each journal, investigate:
+
+1. Journal name and publisher
+2. Scope fit with this manuscript (0-100%)
+3. Whether similar articles have been published there
+4. Article type compatibility
+5. Impact factor or other ranking metric
+6. APC — amount and whether required or optional
+7. Whether APC can be avoided (e.g., non-OA option in hybrid journal)
+8. Waiver / discount possibilities
+9. Word limit, figure/table limits
+10. Open access policy
+11. Pros and cons
+12. A low-cost submission strategy for each journal
+
+Prioritize journals where APC can be avoided.
+Find as many candidates as possible.
+Provide URLs or evidence for your recommendations."#,
+        topic = summary.research_topic,
+        objective = summary.objective,
+        sample = summary.sample_summary,
+        design = summary.design,
+        methods = summary.methods_summary,
+        findings = summary.findings,
+        keywords = keywords,
+        positioning = positioning_section,
+    )
+}
