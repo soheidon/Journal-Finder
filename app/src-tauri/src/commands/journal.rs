@@ -56,8 +56,9 @@ pub async fn parse_external_results(
 pub async fn run_openai_deep_research(
     summary: SummaryResult,
     positioning_report: String,
+    task_type: String,
 ) -> Result<deep_research_api::DeepResearchApiResult, String> {
     let slot = get_deep_research_slot()?;
-    let prompt = prompts::build_deep_research_api_prompt(&summary, &positioning_report);
+    let prompt = deep_research_api::build_prompt(&task_type, &summary, &positioning_report);
     Ok(deep_research_api::run_openai_deep_research(&slot.api_key, &slot.model, &prompt).await)
 }

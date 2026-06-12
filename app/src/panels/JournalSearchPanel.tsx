@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import type { SummaryResult, JournalCandidate, PipelineStatus } from "../App";
+import DeepResearchApiRunner from "../components/DeepResearchApiRunner";
 
 type SortKey = "match_score" | "cost_risk" | "recommendation";
 type CostFilter = "all" | "low" | "medium" | "no_apc";
@@ -43,8 +43,6 @@ function JournalSearchPanel({
   const [copied, setCopied] = useState(false);
   const [externalA, setExternalA] = useState("");
   const [externalB, setExternalB] = useState("");
-  const [apiRunning, setApiRunning] = useState(false);
-  const [apiResult, setApiResult] = useState<string | null>(null);
 
   const stSearch = statusLabels[searchStatus];
   const ready = summaryResult && summaryStatus === "done";
@@ -93,61 +91,12 @@ function JournalSearchPanel({
             </div>
 
             {searchTab === "api" && (
-              <div style={{ padding: "12px 0" }}>
-                <p className="hint-text">
-                  上級者向け: API 経由で Deep Research を実行します。検索回数、reasoning tokens、引用処理などにより高額になる可能性があります。
-                </p>
-                <p className="hint-text" style={{ color: "#c19c00", marginTop: 4 }}>
-                  ⚠ OpenAI Deep Research は Responses API を使用します（chat/completions では動作しません）。通常のチャット API より時間と費用がかかります。
-                </p>
-                <p className="hint-text" style={{ marginTop: 8 }}>
-                  対応モデル: o3-deep-research, o4-mini-deep-research（settings.json で deep_research_provider を OpenAI に設定してください）
-                </p>
-                <div className="action-row" style={{ marginTop: 12 }}>
-                  <button
-                    disabled={apiRunning}
-                    onClick={async () => {
-                      if (!confirm("OpenAI Deep Research は通常の LLM 呼び出しより時間と費用がかかる可能性があります。数分〜数十分かかる場合があります。実行しますか？")) return;
-                      setApiRunning(true);
-                      setApiResult(null);
-                      try {
-                        const result = await invoke<{ ok: boolean; raw_report: string; model_used: string; message: string }>(
-                          "run_openai_deep_research",
-                          { summary: summaryResult, positioningReport: positioningResult || "" }
-                        );
-                        if (result.ok) {
-                          setApiResult(result.raw_report);
-                          // Auto-fill into paste area for parsing
-                          setExternalA(result.raw_report);
-                        } else {
-                          setApiResult(`Error: ${result.message}`);
-                        }
-                      } catch (e) {
-                        setApiResult(`Error: ${e}`);
-                      } finally {
-                        setApiRunning(false);
-                      }
-                    }}
-                  >
-                    {apiRunning ? "Deep Research 実行中（数分かかる場合があります）..." : "OpenAI Deep Research を実行"}
-                  </button>
-                </div>
-                {apiResult && (
-                  <div style={{ marginTop: 12 }}>
-                    <h4>Deep Research 結果</h4>
-                    <pre className="raw-response" style={{ maxHeight: 400 }}>{apiResult}</pre>
-                    {apiResult.startsWith("Error:") ? (
-                      <p className="hint-text" style={{ color: "#d13438", marginTop: 8 }}>
-                        失敗しました。API キーとモデル設定を確認してください。
-                      </p>
-                    ) : (
-                      <p className="hint-text" style={{ color: "#107c10", marginTop: 8 }}>
-                        ✓ Deep Research 結果が「外部 Deep Research を利用」タブの入力欄に自動反映されました。「貼り付け結果を解析」ボタンで解析できます。
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+              <DeepResearchApiRunner
+                summaryResult={summaryResult!}
+                positioningResult={positioningResult}
+                taskType="journal_search"
+                onResult={(report) => setExternalA(report)}
+              />
             )}
 
             {searchTab === "paste" && (

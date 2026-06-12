@@ -322,3 +322,62 @@ Provide URLs or evidence for your recommendations."#,
         positioning = positioning_section,
     )
 }
+
+pub fn build_positioning_api_prompt(summary: &SummaryResult) -> String {
+    let keywords = summary.keywords_for_search.join(", ");
+
+    format!(
+        r#"You are a research assistant specializing in academic literature surveys.
+Investigate where the following manuscript stands in the existing literature.
+
+## Manuscript Information
+- Research Topic: {topic}
+- Objective: {objective}
+- Sample: {sample}
+- Design: {design}
+- Methods: {methods}
+- Measures: {measures}
+- Statistics: {statistics}
+- Findings: {findings}
+- Claimed Contributions: {contributions}
+- Keywords: {keywords}
+
+## Task
+Using web search, investigate the following and provide a detailed positioning report:
+
+1. **Closest Prior Studies**
+   - Find 5-10 representative papers on the same or very similar research topics.
+   - For each: authors, year, title, journal, objective, sample, design, main findings.
+   - Provide URLs or DOIs where available.
+
+2. **Novelty Assessment**
+   - What is genuinely new about this manuscript compared to existing research?
+   - Which aspects are already well-established?
+
+3. **Methodological Positioning**
+   - How do the methods compare to prior work?
+   - Are the methods standard, innovative, or unusual for this field?
+
+4. **Research Domain**
+   - Which research field(s) does this paper belong to?
+   - Which sub-disciplines or specialties?
+
+5. **Keywords for Journal Search**
+   - Propose 10-20 search keywords useful for finding suitable journals.
+
+6. **Summary**
+   - In 2-3 sentences, describe where this paper sits in the existing literature.
+
+Provide specific references with author names, year, title, journal name, and URL/DOI where available."#,
+        topic = summary.research_topic,
+        objective = summary.objective,
+        sample = summary.sample_summary,
+        design = summary.design,
+        methods = summary.methods_summary,
+        measures = summary.measures,
+        statistics = summary.statistics,
+        findings = summary.findings,
+        contributions = summary.claimed_contributions,
+        keywords = keywords,
+    )
+}

@@ -15,6 +15,18 @@ pub struct DeepResearchApiResult {
 // - Cancellation support
 // For now, synchronous execution with 600s timeout.
 
+pub fn build_prompt(
+    task_type: &str,
+    summary: &crate::core::summary::SummaryResult,
+    positioning_report: &str,
+) -> String {
+    match task_type {
+        "positioning" => crate::core::prompts::build_positioning_api_prompt(summary),
+        "journal_search" => crate::core::prompts::build_deep_research_api_prompt(summary, positioning_report),
+        _ => crate::core::prompts::build_deep_research_api_prompt(summary, positioning_report),
+    }
+}
+
 pub async fn run_openai_deep_research(
     api_key: &str,
     model: &str,
