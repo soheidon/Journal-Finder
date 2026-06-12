@@ -32,6 +32,15 @@ const statusLabels: Record<PipelineStatus, { label: string; cls: string }> = {
 const costRiskOrder: Record<string, number> = { low: 0, medium: 1, high: 2, unknown: 3 };
 const recOrder: Record<string, number> = { strong: 0, moderate: 1, weak: 2 };
 
+function makeSlug(name: string, index: number): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .substring(0, 40);
+  return `${String(index).padStart(3, "0")}_${slug}`;
+}
+
 function JournalSearchPanel({
   summaryResult,
   summaryStatus,
@@ -116,9 +125,20 @@ function JournalSearchPanel({
         return;
       }
 
+      // Save journal_names.json
+      if (projectInfo) {
+        try {
+          await invoke("save_project_file", {
+            projectDir: projectInfo.path,
+            filename: "data/journal_names.json",
+            content: JSON.stringify(names, null, 2),
+          });
+        } catch (_) {}
+      }
+
       setParseTotal(names.length);
       const candidates: JournalCandidate[] = [];
-      const errors: string[] = [];
+      const errors: { name: string; error: string; raw: string }[] = [];
 
       // Step B: Parse each journal one by one
       for (let i = 0; i < names.length; i++) {
@@ -134,18 +154,42 @@ function JournalSearchPanel({
             summary: summaryResult,
           });
           candidates.push(candidate);
+
+          // Save individual journal JSON
+          if (projectInfo) {
+            try {
+              const slug = makeSlug(name, i + 1);
+              await invoke("save_project_file", {
+                projectDir: projectInfo.path,
+                filename: `data/journals/${slug}.json`,
+                content: JSON.stringify(candidate, null, 2),
+              });
+            } catch (_) {}
+          }
         } catch (e) {
-          errors.push(`${name}: ${e}`);
-          addLog(`[${name}] 解析失敗: ${e}`);
+          const errMsg = `${e}`;
+          errors.push({ name, error: errMsg, raw: "" });
+          addLog(`[${name}] 解析失敗: ${errMsg}`);
+
+          // Save failed journal info
+          if (projectInfo) {
+            try {
+              const slug = makeSlug(name, i + 1);
+              await invoke("save_project_file", {
+                projectDir: projectInfo.path,
+                filename: `data/journals_failed/${slug}_error.json`,
+                content: JSON.stringify({ journal_name: name, error: errMsg }, null, 2),
+              });
+            } catch (_) {}
+          }
         }
       }
 
-      // Step C: Save results
+      // Step C: Save combined journals.json
       setParseProgress("統合中...");
       onSetJournals(candidates);
       onSetSearchStatus("done");
 
-      // Save journals.json
       if (projectInfo) {
         try {
           await invoke("save_project_file", {
@@ -158,10 +202,10 @@ function JournalSearchPanel({
 
       // Report results
       if (errors.length === 0) {
-        setParseProgress(`完了: ${candidates.length} 件のジャーナル候補を生成しました`);
+        setParseProgress(`完了: ${candidates.length} 件のジャーナル候補を保存しました`);
         addLog(`解析完了: ${candidates.length} 件`);
       } else {
-        setParseProgress(`${candidates.length} 件中 ${candidates.length} 件を解析しました。${errors.length} 件は失敗しました。`);
+        setParseProgress(`${names.length} 件中 ${candidates.length} 件を解析しました。${errors.length} 件は失敗しました。`);
         addLog(`解析完了: ${candidates.length} 件成功、${errors.length} 件失敗`);
       }
     } catch (e) {
