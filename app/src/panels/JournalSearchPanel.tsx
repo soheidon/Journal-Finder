@@ -98,7 +98,7 @@ function JournalSearchPanel({
                   上級者向け: API 経由で Deep Research を実行します。検索回数、reasoning tokens、引用処理などにより高額になる可能性があります。
                 </p>
                 <p className="hint-text" style={{ color: "#c19c00", marginTop: 4 }}>
-                  ⚠ OpenAI Deep Research は Responses API を使用します（chat/completions では動作しません）。
+                  ⚠ OpenAI Deep Research は Responses API を使用します（chat/completions では動作しません）。通常のチャット API より時間と費用がかかります。
                 </p>
                 <p className="hint-text" style={{ marginTop: 8 }}>
                   対応モデル: o3-deep-research, o4-mini-deep-research（settings.json で deep_research_provider を OpenAI に設定してください）

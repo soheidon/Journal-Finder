@@ -381,7 +381,7 @@ function SettingsPanel({ addLog, showStatus, testResults, onTestResultsChange }:
                   </p>
                   {slot.provider === "openai" && (
                     <p style={{ color: "#c19c00", marginTop: 4 }}>
-                      ⚠ OpenAI Deep Research は Responses API を使用します。通常の chat/completions では動作しません。アプリ内実行は未実装です。
+                      ⚠ OpenAI Deep Research は Responses API を使用します。通常の chat/completions では動作しません。通常のチャット API より時間と費用がかかります。
                     </p>
                   )}
                   {slot.provider === "perplexity" && (
