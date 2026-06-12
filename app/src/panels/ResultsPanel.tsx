@@ -55,7 +55,13 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
 
   return (
     <div className="panel results-panel">
-      <h2>結果</h2>
+      <div className="input-section info-card">
+        <h3>結果について</h3>
+        <p>
+          論文要約とジャーナル候補をまとめた投稿先選定レポートを生成・エクスポートできます。
+          Markdown 形式でコピーまたはファイル保存が可能です。
+        </p>
+      </div>
 
       {!hasResults ? (
         <p className="hint-text">まだ結果がありません。「検索」画面でジャーナル検索を実行してください。</p>

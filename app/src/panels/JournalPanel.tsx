@@ -78,7 +78,13 @@ function JournalPanel({
 
   return (
     <div className="panel journal-panel">
-      <h2>ジャーナル検索</h2>
+      <div className="input-section info-card">
+        <h3>検索について</h3>
+        <p>
+          まず論文の構造化要約を生成し、その要約をもとに投稿先ジャーナル候補を検索します。
+          Deep Research は外部 AI（ChatGPT / Perplexity 等）の検索結果を貼り付ける方式で行います。
+        </p>
+      </div>
 
       <div className="input-section">
         <h3>Step 1: 論文要約</h3>
