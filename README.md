@@ -1,178 +1,125 @@
 # 論文投稿先アドバイザ
 
-論文原稿を読み込み、投稿先ジャーナル候補を推薦するデスクトップアプリケーションです。
+学術論文の投稿先ジャーナルを、費用面も含めて総合的に推薦するデスクトップアプリケーションです。
 
-## 概要
+## このアプリでできること
 
-- docx 形式の論文原稿を入力
-- LLM による構造化要約を生成
-- Deep Research 結果（外部 AI 貼り付け方式 / API 方式）を統合
-- 投稿候補ジャーナルを推薦・ランク付け
+- **docx ファイルを読み込み**、論文の構造化要約を自動生成
+- **先行研究上の立ち位置**を Deep Research で調査
+- **投稿先ジャーナル候補**を Deep Research で探索
+- 各候補の **APC（論文処理費）、掲載方法、waiver 情報、低コスト投稿戦略** を評価
+- **Markdown / Word / JSON** 形式でレポートを出力
 
-## 技術スタック
+## インストール
 
-| 層 | 技術 |
-|---|---|
-| GUI | Tauri v2 + React + TypeScript |
-| Backend/Core | Rust |
-| 通信 | Tauri commands |
+### Windows
 
-## 動作環境
+[Releases](https://github.com/soheidon/Journal-Finder/releases) ページから最新の `.msi` ファイルをダウンロードしてインストールしてください。
 
-- **OS**: Windows 11（主対象）
-- **Node.js**: 20+
-- **Rust**: 1.70+
-
-## セットアップ
-
-### 1. リポジトリのクローン
+### ソースコードからのビルド
 
 ```bash
-git clone <repository-url>
-cd Journal-Finder
-```
-
-### 2. フロントエンドの依存関係インストール
-
-```bash
-cd app
+git clone https://github.com/soheidon/Journal-Finder.git
+cd Journal-Finder/app
 npm install
-```
-
-### 3. 環境変数の設定（API Key）
-
-API Key は環境変数で管理します。設定ファイルには環境変数名のみ保存され、API Key の実値は保存されません。
-
-ターミナルで以下を実行してからアプリを起動してください：
-
-```bash
-# OpenAI
-set OPENAI_API_KEY=sk-your-key-here
-
-# DeepSeek
-set DEEPSEEK_API_KEY=sk-your-key-here
-
-# Anthropic
-set ANTHROPIC_API_KEY=sk-ant-your-key-here
-
-# Gemini (Google AI Studio)
-set GEMINI_API_KEY=your-key-here
-
-# Kimi (Moonshot)
-set MOONSHOT_API_KEY=your-key-here
-
-# Xiaomi MiMo
-set MIMO_API_KEY=your-key-here
-
-# MiniMax
-set MINIMAX_API_KEY=your-key-here
-
-# OpenRouter
-set OPENROUTER_API_KEY=sk-or-your-key-here
-```
-
-または、Windows の「システム環境変数」に設定すると、毎回の入力が不要になります。
-
-**Ollama** はローカルで動作するため API Key 不要です。
-
-### 4. 開発モードで起動
-
-```bash
-npm run tauri dev
-```
-
-初回起動時は Rust のコンパイルに時間がかかります（数分）。
-
-### 5. ビルド（配布用実行ファイル作成）
-
-```bash
 npm run tauri build
 ```
 
-ビルド成果物は `app/src-tauri/target/release/bundle/` に出力されます。
+## 使い方
 
-## 対応 LLM Provider
+### 1. API キーの設定
 
-| Provider | API 形式 | 環境変数 | 推論モード | モデル一覧取得 |
-|---|---|---|---|---|
-| OpenAI | OpenAI Compatible | `OPENAI_API_KEY` | — | API (`/v1/models`) |
-| DeepSeek | OpenAI Compatible | `DEEPSEEK_API_KEY` | — | 静的プリセット |
-| Gemini | Gemini API | `GEMINI_API_KEY` | thinking / extended / max | API (`v1beta/models`) |
-| Anthropic | Anthropic Messages | `ANTHROPIC_API_KEY` | extended thinking | 静的プリセット |
-| Kimi (Moonshot) | OpenAI Compatible | `MOONSHOT_API_KEY` | thinking / extended | 静的プリセット |
-| Xiaomi MiMo | OpenAI Compatible | `MIMO_API_KEY` | — | 静的プリセット |
-| MiniMax | OpenAI Compatible | `MINIMAX_API_KEY` | — | 静的プリセット |
-| OpenRouter | OpenAI Compatible | `OPENROUTER_API_KEY` | — | API (`/api/v1/models`) |
-| Ollama | Ollama | 不要 | — | Local (`/api/tags`) |
+本アプリは LLM API を使用します。API キーは環境変数で管理します（設定ファイルには保存されません）。
 
-## 推論モード設定
+**Windows の場合**、PowerShell で以下を実行してからアプリを起動してください：
 
-Gemini / Anthropic / Kimi では、thinking / reasoning モードを設定できます。
+```powershell
+$env:DEEPSEEK_API_KEY="sk-your-key"
+$env:OPENAI_API_KEY="sk-your-key"
+```
 
-| モード | 説明 |
+または、Windows の「システムの詳細設定」→「環境変数」に設定すると、毎回の入力が不要になります。
+
+対応 Provider と環境変数名：
+
+| Provider | 環境変数 |
 |---|---|
-| Off | 推論無効 |
-| Standard | 標準的な推論 |
-| Extended | 拡張推論（より多くのトークンを使用） |
-| Max | 最大推論 |
-| Custom | カスタムトークン予算を指定 |
+| OpenAI | `OPENAI_API_KEY` |
+| DeepSeek | `DEEPSEEK_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Gemini | `GEMINI_API_KEY` |
+| Kimi (Moonshot) | `MOONSHOT_API_KEY` |
+| Xiaomi MiMo | `MIMO_API_KEY` |
+| MiniMax | `MINIMAX_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| Perplexity | `PERPLEXITY_API_KEY` |
+| Ollama | 不要（ローカル実行） |
 
-**注意**: DeepSeek / MiMo / MiniMax では推論モード設定は未対応またはモデル側で自動判定されます。
+### 2. プロジェクトの作成
 
-## Deep Research API の費用注意
+ホーム画面で「新規プロジェクト」をクリックし、プロジェクト名と保存先フォルダを選択します。
 
-Deep Research API は通常の LLM API より高額になる可能性があります。
+### 3. 論文の読み込み
 
-| Provider | 費用構造 |
+「入力」タブで docx ファイルを選択し、「テキスト抽出」を実行します。
+
+### 4. 論文要約
+
+「論文要約」タブで「論文要約を生成」をクリックします。LLM が論文を読み込み、研究テーマ・目的・方法・結果などを構造化要約として生成します。
+
+### 5. 立ち位置調査
+
+「立ち位置調査」タブで、先行研究上の立ち位置を調べます。
+
+**貼り付け方式（推奨・無料）**:
+1. 「プロンプトを生成」→「コピー」
+2. ChatGPT / Perplexity / Gemini / Claude 等の Deep Research に貼り付け
+3. 結果をテキストエリアに貼り戻し →「保存」
+
+**API 方式（上級者向け・有料）**:
+- OpenAI Deep Research API を使用（Responses API）
+- 実行には数分〜数十分、費用がかかる場合があります
+
+### 6. ジャーナル調査
+
+「ジャーナル調査」タブで、投稿先候補を探索します。立ち位置調査の結果を使って、より精度の高い候補を取得できます。
+
+**貼り付け方式（推奨・無料）**:
+1. 「プロンプトを生成」→「コピー」
+2. 外部 AI の Deep Research に貼り付け
+3. 結果を貼り戻し →「保存」→「解析」
+
+**API 方式（上級者向け・有料）**:
+- OpenAI Deep Research API を使用
+
+解析後、候補ジャーナルの一覧が表示されます。各行をクリックすると詳細（APC、掲載方法、waiver 情報、投稿戦略）が表示されます。
+
+### 7. 結果の確認・出力
+
+「結果」タブで、レポートを Markdown / Word / JSON 形式で保存できます。
+
+## Deep Research API の費用について
+
+本アプリの貼り付け方式は無料ですが、API 方式は費用が発生します。
+
+| Provider | 費用の目安 |
 |---|---|
+| OpenAI Deep Research | トークン料金 + web_search tool call の回数分 |
 | Perplexity Sonar Deep Research | 入出力トークン + citation tokens + search queries + reasoning tokens |
-| OpenAI Deep Research | Responses API + web_search tool call（検索回数分加算） |
 | Gemini Grounding | トークン料金 + 検索クエリ数に応じた課金 |
-| Claude Web Search | 通常トークン料金 + Web search $10/1,000 searches |
+| Claude Web Search | トークン料金 + Web search $10/1,000 searches |
 
-**推奨**: まずは外部 Deep Research 貼り付け方式（無料）で試し、必要に応じて API 方式を利用してください。
+**推奨**: まずは貼り付け方式（無料）で試し、必要に応じて API 方式を利用してください。
 
-## プロジェクトフォルダ構成
+## 費用を抑える投稿戦略
 
-各プロジェクトのフォルダ構成：
+本アプリは「できるだけ安価に適切なジャーナルへ投稿すること」を目的としています。各候補について以下を評価します：
 
-```
-プロジェクト/
-  project.json                  # プロジェクト情報
-  source/
-    manuscript.docx             # 元の docx ファイル
-  data/
-    manuscript_text.txt         # 抽出テキスト（全文）
-    manuscript_text.json        # 抽出テキスト（構造化 JSON）
-    summary.json                # 論文要約
-    positioning_research.md     # 立ち位置調査結果（Deep Research 生データ）
-    journal_research.md         # ジャーナル調査結果（Deep Research 生データ）
-    journal_names.json          # 抽出された候補ジャーナル名リスト
-    journals/
-      001_child_abuse_neglect.json
-      002_evolution_and_human_behavior.json
-    journals_failed/
-      004_child_maltreatment_error.json
-    journals.json               # 統合統合済みジャーナル候補
-```
-
-- `positioning_research.md`: 先行研究上の立ち位置を調査した Deep Research の生結果
-- `journal_research.md`: 投稿先ジャーナルを調査した Deep Research の生結果
-- `journal_names.json`: Deep Research 結果から抽出した候補ジャーナル名リスト
-- `journals/*.json`: 1誌ずつの詳細 JSON（マッチ度、APC、投稿戦略を含む）
-- `journals_failed/*.json`: 解析に失敗した候補のエラー情報
-- `journals.json`: 全候補を統合した結果（結果画面表示用）
-
-## 開発
-
-```bash
-# フロントエンドのみ（Vite 開発サーバー）
-npm run dev
-
-# Tauri アプリ全体（フロントエンド + Rust バックエンド）
-npm run tauri dev
-```
+- **APC が不要な候補**: Subscription journal / 非 OA 投稿
+- **APC が回避可能な候補**: Hybrid OA で非 OA 選択、waiver / discount
+- **APC が必須の候補**: Gold OA、費用リスクが高い
+- **所属機関の Read & Publish 契約**: 大学図書館や研究支援部門に確認
 
 ## ライセンス
 
-MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
+MIT License - [LICENSE](LICENSE) を参照してください。
