@@ -152,12 +152,21 @@ function App() {
       setExtractStatus("done");
       addLog(`テキスト抽出完了: ${result.paragraph_count} 段落, ${result.char_count} 文字, ${result.sections.length} セクション`);
       showStatus("success", `テキスト抽出完了: ${result.paragraph_count} 段落, ${result.char_count} 文字`);
+      // Save to project folder
+      if (projectInfo) {
+        try {
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "manuscript_text.txt", content: result.raw_text });
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "manuscript_text.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project", { info: { ...projectInfo, docx_file: docxPath } });
+          addLog("プロジェクトフォルダに保存しました");
+        } catch (_) {}
+      }
     } catch (e) {
       setExtractStatus("failed");
       addLog(`テキスト抽出エラー: ${e}`);
       showStatus("error", `テキスト抽出に失敗しました: ${e}`);
     }
-  }, [docxPath, addLog, showStatus]);
+  }, [docxPath, projectInfo, addLog, showStatus]);
 
   const handleGenerateSummary = useCallback(async () => {
     if (!manuscriptText) return;
@@ -169,12 +178,20 @@ function App() {
       setSummaryStatus("done");
       addLog(`要約完了: ${result.research_topic}`);
       showStatus("success", "論文要約が完了しました");
+      // Save to project folder
+      if (projectInfo) {
+        try {
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "summary.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project", { info: { ...projectInfo, has_summary: true } });
+          addLog("要約をプロジェクトフォルダに保存しました");
+        } catch (_) {}
+      }
     } catch (e) {
       setSummaryStatus("failed");
       addLog(`要約エラー: ${e}`);
       showStatus("error", `要約に失敗しました: ${e}`);
     }
-  }, [manuscriptText, addLog, showStatus]);
+  }, [manuscriptText, projectInfo, addLog, showStatus]);
 
   const handleGetSearchPrompt = useCallback(async () => {
     if (!summaryResult) return;
@@ -204,12 +221,20 @@ function App() {
       setSearchStatus("done");
       addLog(`解析完了: ${result.length} 件のジャーナル候補`);
       showStatus("success", `${result.length} 件のジャーナル候補が見つかりました`);
+      // Save to project folder
+      if (projectInfo) {
+        try {
+          await invoke("save_project_file", { projectDir: projectInfo.path, filename: "journals.json", content: JSON.stringify(result, null, 2) });
+          await invoke("save_project", { info: { ...projectInfo, has_journals: true } });
+          addLog("ジャーナル候補をプロジェクトフォルダに保存しました");
+        } catch (_) {}
+      }
     } catch (e) {
       setSearchStatus("failed");
       addLog(`解析エラー: ${e}`);
       showStatus("error", `解析に失敗しました: ${e}`);
     }
-  }, [summaryResult, addLog, showStatus]);
+  }, [summaryResult, projectInfo, addLog, showStatus]);
 
   const handleExportReport = useCallback(async (content: string, defaultFilename: string, format: string) => {
     try {
