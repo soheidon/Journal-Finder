@@ -301,8 +301,8 @@ button.test-button:hover:not(:disabled) {
 }
 
 .status-chip.ok {
-  background: #f0f0f0;
-  color: #555555;
+  background: #dff6dd;
+  color: #107c10;
 }
 
 .status-chip.warn {
