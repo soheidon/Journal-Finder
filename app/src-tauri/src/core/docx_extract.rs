@@ -52,7 +52,6 @@ const EXCLUDE_TAGS: &[&[u8]] = &[
     b"w:bookmarkStart",  // Bookmarks
     b"w:bookmarkEnd",
     b"w:smartTag",       // Smart tags
-    b"w:sdtContent",     // Structured document tags content (often metadata)
 ];
 
 pub fn extract_docx(path: &str) -> Result<ManuscriptText, String> {
