@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
-  "productName": "論文投稿先アドバイザ",
+  "productName": "Journal Finder",
   "version": "0.1.0",
   "identifier": "com.journal-finder.app",
   "build": {
