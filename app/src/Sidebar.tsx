@@ -9,7 +9,9 @@ const menuItems: { key: ActiveView; icon: string; label: string }[] = [
   { key: "home", icon: "🏠", label: "ホーム" },
   { key: "settings", icon: "⚙️", label: "API設定" },
   { key: "input", icon: "📄", label: "入力" },
-  { key: "journal", icon: "🔍", label: "検索" },
+  { key: "summary", icon: "📝", label: "論文要約" },
+  { key: "positioning", icon: "🔬", label: "立ち位置調査" },
+  { key: "journal_search", icon: "🔍", label: "ジャーナル調査" },
   { key: "results", icon: "📊", label: "結果" },
 ];
 

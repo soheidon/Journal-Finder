@@ -117,10 +117,18 @@ function HomePanel({ onNavigate, projectInfo, onCreateProject, onOpenProject }: 
             で docx ファイルを選択し、テキスト抽出を実行
           </li>
           <li>
-            <button className="link-button" onClick={() => onNavigate("journal")}>
-              検索画面
+            <button className="link-button" onClick={() => onNavigate("summary")}>
+              論文要約
             </button>
-            で論文要約を生成し、ジャーナル検索を実行
+            で要約を生成し、
+            <button className="link-button" onClick={() => onNavigate("positioning")}>
+              立ち位置調査
+            </button>
+            →
+            <button className="link-button" onClick={() => onNavigate("journal_search")}>
+              ジャーナル調査
+            </button>
+            で投稿先を探す
           </li>
           <li>
             <button className="link-button" onClick={() => onNavigate("results")}>

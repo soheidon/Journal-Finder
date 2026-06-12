@@ -6,7 +6,8 @@ interface ProgressBarProps {
 const steps = [
   { label: "テキスト抽出" },
   { label: "論文要約" },
-  { label: "ジャーナル検索" },
+  { label: "立ち位置調査" },
+  { label: "ジャーナル調査" },
   { label: "結果出力" },
 ];
 

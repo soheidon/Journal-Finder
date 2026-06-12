@@ -4,12 +4,14 @@ import Sidebar from "./Sidebar";
 import ProgressBar from "./ProgressBar";
 import HomePanel from "./panels/HomePanel";
 import InputPanel from "./panels/InputPanel";
-import JournalPanel from "./panels/JournalPanel";
+import SummaryPanel from "./panels/SummaryPanel";
+import PositioningPanel from "./panels/PositioningPanel";
+import JournalSearchPanel from "./panels/JournalSearchPanel";
 import ResultsPanel from "./panels/ResultsPanel";
 import SettingsPanel from "./panels/SettingsPanel";
 import LogPanel from "./panels/LogPanel";
 
-export type ActiveView = "home" | "input" | "journal" | "results" | "settings";
+export type ActiveView = "home" | "settings" | "input" | "summary" | "positioning" | "journal_search" | "results";
 
 export interface ManuscriptText {
   raw_text: string;
@@ -327,7 +329,9 @@ function App() {
 
   const currentStep = extractStatus === "done"
     ? summaryStatus === "done"
-      ? searchStatus === "done" ? 3 : 2
+      ? positioningResult
+        ? searchStatus === "done" ? 4 : 3
+        : 2
       : 1
     : 0;
 
@@ -336,7 +340,7 @@ function App() {
       <Sidebar activeView={activeView} onNavigate={setActiveView} />
       <div className="main-area">
         <ProgressBar currentStep={currentStep} onStepClick={(step) => {
-          const views: ActiveView[] = ["input", "input", "journal", "results"];
+          const views: ActiveView[] = ["input", "summary", "positioning", "journal_search", "results"];
           setActiveView(views[step]);
         }} />
         {statusMessage && (
@@ -362,18 +366,31 @@ function App() {
               onExtract={handleExtractDocx}
             />
           )}
-          {activeView === "journal" && (
-            <JournalPanel
+          {activeView === "summary" && (
+            <SummaryPanel
               summaryResult={summaryResult}
-              journals={journals}
               summaryStatus={summaryStatus}
-              searchStatus={searchStatus}
+              onGenerateSummary={handleGenerateSummary}
+            />
+          )}
+          {activeView === "positioning" && (
+            <PositioningPanel
+              summaryResult={summaryResult}
+              summaryStatus={summaryStatus}
               positioningPrompt={positioningPrompt}
               positioningResult={positioningResult}
-              journalSearchPrompt={journalSearchPrompt}
-              onGenerateSummary={handleGenerateSummary}
               onGetPositioningPrompt={handleGetPositioningPrompt}
               onSetPositioningResult={setPositioningResult}
+            />
+          )}
+          {activeView === "journal_search" && (
+            <JournalSearchPanel
+              summaryResult={summaryResult}
+              summaryStatus={summaryStatus}
+              positioningResult={positioningResult}
+              journals={journals}
+              searchStatus={searchStatus}
+              journalSearchPrompt={journalSearchPrompt}
               onGetJournalSearchPrompt={handleGetJournalSearchPrompt}
               onParseExternalResults={handleParseExternalResults}
             />
