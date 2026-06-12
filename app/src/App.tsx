@@ -109,6 +109,7 @@ export interface LlmTestResult {
 export interface ReportData {
   markdown: string;
   json: string;
+  docx_base64: string;
 }
 
 export interface ProjectInfo {

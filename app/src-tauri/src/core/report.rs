@@ -2,17 +2,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::deep_research::JournalCandidate;
 use crate::core::summary::SummaryResult;
+use docx_rs::{Docx, Paragraph, Run};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ReportData {
     pub markdown: String,
     pub json: String,
+    pub docx_base64: String,
 }
 
 pub fn generate_report(summary: &SummaryResult, journals: &[JournalCandidate]) -> ReportData {
     let markdown = generate_markdown(summary, journals);
     let json = generate_json(summary, journals);
-    ReportData { markdown, json }
+    let docx_base64 = generate_docx_base64(summary, journals);
+    ReportData { markdown, json, docx_base64 }
 }
 
 fn generate_markdown(summary: &SummaryResult, journals: &[JournalCandidate]) -> String {
@@ -331,3 +334,104 @@ fn generate_json(summary: &SummaryResult, journals: &[JournalCandidate]) -> Stri
 
     serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string())
 }
+
+fn generate_docx_base64(summary: &SummaryResult, journals: &[JournalCandidate]) -> String {
+    use docx_rs::*;
+
+    let mut doc = Docx::new();
+
+    // Title
+    doc = doc.add_paragraph(
+        Paragraph::new()
+            .add_run(Run::new().add_text("投稿先選定レポート — Journal Finder").bold().size(28)),
+    );
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("")));
+
+    // Section 1: Summary
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("1. 論文の構造化要約").bold().size(24)));
+    doc = add_field(doc, "研究テーマ", &summary.research_topic);
+    doc = add_field(doc, "目的", &summary.objective);
+    doc = add_field(doc, "対象", &summary.sample_summary);
+    doc = add_field(doc, "研究デザイン", &summary.design);
+    doc = add_field(doc, "方法", &summary.methods_summary);
+    doc = add_field(doc, "主要結果", &summary.findings);
+
+    // Section 2: Keywords
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("2. 検索キーワード").bold().size(24)));
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text(&summary.keywords_for_search.join(", "))));
+
+    // Section 3: Journal table
+    doc = doc.add_paragraph(
+        Paragraph::new().add_run(Run::new().add_text(&format!("3. 推薦ジャーナル一覧 ({} 件)", journals.len())).bold().size(24)),
+    );
+
+    let header_row = TableRow::new(vec![
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("#").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("ジャーナル名").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("マッチ度").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("指標").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("APC").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("費用リスク").bold())),
+        TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("推薦").bold())),
+    ]);
+
+    let mut rows = vec![header_row];
+    for (i, j) in journals.iter().enumerate() {
+        rows.push(TableRow::new(vec![
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&format!("{}", i + 1)))),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&j.journal_name).bold())),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&format!("{}%", j.match_score)))),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&j.impact_factor_or_metric))),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&j.apc))),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&j.cost_risk_level))),
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(&j.recommendation_level))),
+        ]));
+    }
+    doc = doc.add_table(Table::new(rows));
+
+    // Section 4: Journal details
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("4. ジャーナル詳細").bold().size(24)));
+    for (i, j) in journals.iter().enumerate() {
+        doc = doc.add_paragraph(
+            Paragraph::new().add_run(
+                Run::new()
+                    .add_text(&format!("{}. {} (マッチ度: {}%)", i + 1, j.journal_name, j.match_score))
+                    .bold()
+                    .size(22),
+            ),
+        );
+        doc = add_field(doc, "出版社", &j.publisher);
+        doc = add_field(doc, "スコープ適合", &j.scope_fit);
+        doc = add_field(doc, "掲載方法", &j.publication_route);
+        doc = add_field(doc, "APC", &j.apc);
+        doc = add_field(doc, "APC 必須/任意", &j.apc_required);
+        doc = add_field(doc, "APC 回避", &j.apc_avoidance);
+        doc = add_field(doc, "推奨投稿方法", &j.recommended_submission_strategy);
+        doc = add_field(doc, "推薦理由", &j.reason);
+    }
+
+    // Section 5: Disclaimers
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("5. 注意書き").bold().size(24)));
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("- Impact Factor は Clarivate JCR 由来の指標であり、外部 Deep Research では取得できない場合があります。")));
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("- APC、掲載方法、waiver の有無は変更される可能性があります。")));
+    doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_text("- 本レポートは AI による自動推定であり、査読結果や採択可否を保証するものではありません。")));
+
+    // Generate bytes and encode to base64
+    let mut buf = std::io::Cursor::new(Vec::new());
+    match doc.build().pack(&mut buf) {
+        Ok(()) => {
+            use base64::Engine;
+            base64::engine::general_purpose::STANDARD.encode(buf.into_inner())
+        }
+        Err(_) => String::new(),
+    }
+}
+
+fn add_field(doc: Docx, label: &str, value: &str) -> Docx {
+    doc.add_paragraph(
+        Paragraph::new()
+            .add_run(Run::new().add_text(&format!("{}: ", label)).bold())
+            .add_run(Run::new().add_text(value)),
+    )
+}
+

@@ -54,6 +54,25 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
     onExport(report.json, "journal_finder_report.json", "json");
   }, [report, onExport]);
 
+  const handleSaveDocx = useCallback(async () => {
+    if (!report || !report.docx_base64) return;
+    try {
+      const binary = atob(report.docx_base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "journal_finder_report.docx";
+      a.click();
+      URL.revokeObjectURL(url);
+      addLog("Word ファイルをダウンロードしました");
+    } catch (e) {
+      addLog(`Word 保存エラー: ${e}`);
+    }
+  }, [report, addLog]);
+
   return (
     <div className="panel results-panel">
       <div className="input-section info-card">
@@ -82,13 +101,14 @@ function ResultsPanel({ summaryResult, journals, addLog, onExport }: ResultsPane
             <>
               <div className="input-section">
                 <h3>エクスポート</h3>
-                <div className="action-row">
-                  <button onClick={handleCopyMarkdown}>
-                    {copied ? "コピー済み ✓" : "Markdown をコピー"}
-                  </button>
-                  <button onClick={handleSaveMarkdown}>Markdown として保存</button>
-                  <button onClick={handleSaveJson}>JSON として保存</button>
-                </div>
+              <div className="action-row">
+                <button onClick={handleCopyMarkdown}>
+                  {copied ? "コピー済み ✓" : "Markdown をコピー"}
+                </button>
+                <button onClick={handleSaveMarkdown}>Markdown として保存</button>
+                <button onClick={handleSaveDocx}>Word として保存</button>
+                <button onClick={handleSaveJson}>JSON として保存</button>
+              </div>
               </div>
 
               <div className="input-section">
