@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+target/
+
+# Build outputs
+dist/
+*.exe
+*.msi
+*.dmg
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
