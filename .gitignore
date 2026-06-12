@@ -1,16 +1,8 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-
 # Node / Tauri
 node_modules/
 app/src-tauri/target/
 app/src-tauri/gen/
+dist/
 
 # IDE
 .vscode/
@@ -25,6 +17,9 @@ Thumbs.db
 *.pem
 credentials.json
 
+# MiMo Code local files
+.mimocode/
+
 # Claude Code
 .claude/
 
@@ -34,5 +29,5 @@ e2e_test_project/
 *_test_project/
 work/
 
-# Session logs (canonical copies in docs/implementation_logs/)
+# Logs
 logs/
