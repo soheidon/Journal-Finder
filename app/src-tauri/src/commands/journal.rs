@@ -1,5 +1,6 @@
 use crate::commands::llm::load_settings_inner;
 use crate::core::deep_research;
+use crate::core::prompts;
 use crate::core::summary::SummaryResult;
 
 fn get_assessor_slot() -> Result<crate::core::llm_client::LlmSlot, String> {
@@ -11,6 +12,16 @@ fn get_assessor_slot() -> Result<crate::core::llm_client::LlmSlot, String> {
 
     let api_key = config.resolve_api_key()?;
     Ok(config.to_slot(api_key))
+}
+
+#[tauri::command]
+pub fn get_positioning_prompt(summary: SummaryResult) -> Result<String, String> {
+    Ok(prompts::build_positioning_prompt(&summary))
+}
+
+#[tauri::command]
+pub fn get_journal_search_prompt(summary: SummaryResult, positioning: String) -> Result<String, String> {
+    Ok(prompts::build_journal_search_prompt(&summary, &positioning))
 }
 
 #[tauri::command]

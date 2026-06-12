@@ -19,6 +19,8 @@ fn main() {
             commands::llm::save_settings,
             commands::llm::load_settings,
             commands::summary::generate_summary,
+            commands::journal::get_positioning_prompt,
+            commands::journal::get_journal_search_prompt,
             commands::journal::get_search_prompt,
             commands::journal::parse_external_results,
             commands::report::generate_report,

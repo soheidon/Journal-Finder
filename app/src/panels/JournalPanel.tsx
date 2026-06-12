@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import type { SummaryResult, JournalCandidate, PipelineStatus } from "../App";
-import PasteModal from "../components/PasteModal";
 
 type SortKey = "match_score" | "cost_risk" | "recommendation";
 type CostFilter = "all" | "low" | "medium" | "no_apc";
@@ -10,9 +9,13 @@ interface JournalPanelProps {
   journals: JournalCandidate[];
   summaryStatus: PipelineStatus;
   searchStatus: PipelineStatus;
-  searchPrompt: string;
+  positioningPrompt: string;
+  positioningResult: string;
+  journalSearchPrompt: string;
   onGenerateSummary: () => void;
-  onGetSearchPrompt: () => void;
+  onGetPositioningPrompt: () => void;
+  onSetPositioningResult: (result: string) => void;
+  onGetJournalSearchPrompt: () => void;
   onParseExternalResults: (externalA: string, externalB: string) => void;
 }
 
@@ -31,91 +34,79 @@ function JournalPanel({
   journals,
   summaryStatus,
   searchStatus,
-  searchPrompt,
+  positioningPrompt,
+  positioningResult,
+  journalSearchPrompt,
   onGenerateSummary,
-  onGetSearchPrompt,
+  onGetPositioningPrompt,
+  onSetPositioningResult,
+  onGetJournalSearchPrompt,
   onParseExternalResults,
 }: JournalPanelProps) {
-  const [modalOpen, setModalOpen] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState<JournalCandidate | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("match_score");
   const [filterCost, setFilterCost] = useState<CostFilter>("all");
   const [searchTab, setSearchTab] = useState<"api" | "paste">("paste");
+  const [positioningCopied, setPositioningCopied] = useState(false);
+  const [journalCopied, setJournalCopied] = useState(false);
+  const [externalJournalA, setExternalJournalA] = useState("");
+  const [externalJournalB, setExternalJournalB] = useState("");
 
   const stSummary = statusLabels[summaryStatus];
   const stSearch = statusLabels[searchStatus];
 
   const sortedJournals = useMemo(() => {
     let filtered = [...journals];
-    if (filterCost === "low") {
-      filtered = filtered.filter(j => j.cost_risk_level === "low");
-    } else if (filterCost === "medium") {
-      filtered = filtered.filter(j => j.cost_risk_level === "low" || j.cost_risk_level === "medium");
-    } else if (filterCost === "no_apc") {
-      filtered = filtered.filter(j => j.apc_required === "no_apc");
-    }
+    if (filterCost === "low") filtered = filtered.filter(j => j.cost_risk_level === "low");
+    else if (filterCost === "medium") filtered = filtered.filter(j => j.cost_risk_level === "low" || j.cost_risk_level === "medium");
+    else if (filterCost === "no_apc") filtered = filtered.filter(j => j.apc_required === "no_apc");
 
-    if (sortBy === "match_score") {
-      filtered.sort((a, b) => b.match_score - a.match_score);
-    } else if (sortBy === "cost_risk") {
-      filtered.sort((a, b) => (costRiskOrder[a.cost_risk_level] ?? 3) - (costRiskOrder[b.cost_risk_level] ?? 3));
-    } else if (sortBy === "recommendation") {
-      filtered.sort((a, b) => (recOrder[a.recommendation_level.toLowerCase()] ?? 3) - (recOrder[b.recommendation_level.toLowerCase()] ?? 3));
-    }
+    if (sortBy === "match_score") filtered.sort((a, b) => b.match_score - a.match_score);
+    else if (sortBy === "cost_risk") filtered.sort((a, b) => (costRiskOrder[a.cost_risk_level] ?? 3) - (costRiskOrder[b.cost_risk_level] ?? 3));
+    else if (sortBy === "recommendation") filtered.sort((a, b) => (recOrder[a.recommendation_level.toLowerCase()] ?? 3) - (recOrder[b.recommendation_level.toLowerCase()] ?? 3));
     return filtered;
   }, [journals, sortBy, filterCost]);
 
-  const handleOpenModal = () => {
-    if (!searchPrompt) {
-      onGetSearchPrompt();
-    }
-    setModalOpen(true);
-  };
-
-  const handleParse = (externalA: string, externalB: string) => {
-    setModalOpen(false);
-    onParseExternalResults(externalA, externalB);
+  const copyToClipboard = async (text: string, setCopied: (v: boolean) => void) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="panel journal-panel">
       <div className="input-section info-card">
         <h3>検索について</h3>
-        <p>
-          まず論文の構造化要約を生成し、その要約をもとに投稿先ジャーナル候補を検索します。
-        </p>
+        <p>論文の構造化要約をもとに、投稿先ジャーナル候補を検索します。</p>
         <ul>
           <li><strong>API で Deep Research</strong>: API 経由で自動調査（準備中）</li>
-          <li><strong>外部 Deep Research を利用</strong>: ChatGPT / Perplexity 等の結果を貼り付け</li>
+          <li><strong>外部 Deep Research を利用</strong>: 2段階で ChatGPT / Perplexity 等の結果を貼り付け</li>
         </ul>
       </div>
 
+      {/* Summary */}
       <div className="input-section">
         <h3>Step 1: 論文要約</h3>
         <div className="action-row">
-          <button
-            onClick={onGenerateSummary}
-            disabled={!summaryResult === false && summaryStatus === "in_progress"}
-          >
+          <button onClick={onGenerateSummary} disabled={summaryStatus === "in_progress"}>
             {summaryStatus === "in_progress" ? "要約生成中..." : "論文要約を生成"}
           </button>
           <span className={`status-chip ${stSummary.cls}`}>{stSummary.label}</span>
         </div>
         {summaryStatus === "done" && summaryResult && (
-          <p className="hint-text" style={{ color: "#81c784", marginTop: 8 }}>
+          <p className="hint-text" style={{ color: "#107c10", marginTop: 8 }}>
             ✓ 要約完了: {summaryResult.research_topic}
           </p>
         )}
       </div>
 
+      {/* Summary details */}
       {summaryResult && summaryStatus === "done" && (
         <div className="input-section">
           <h3>要約結果</h3>
           {summaryResult.research_topic.startsWith("(JSON parse failed") ? (
             <div className="raw-fallback">
-              <p className="hint-text" style={{ color: "#e57373" }}>
-                JSON のパースに失敗しました。LLM の生レスポンスを表示します。
-              </p>
+              <p className="hint-text" style={{ color: "#d13438" }}>JSON パース失敗。生レスポンスを表示します。</p>
               <pre className="raw-response">{summaryResult.raw_response}</pre>
             </div>
           ) : (
@@ -129,88 +120,157 @@ function JournalPanel({
               <div className="summary-item"><label>キーワード</label><p>{summaryResult.keywords_for_search.join(", ")}</p></div>
             </div>
           )}
-          <details className="raw-text-details">
-            <summary>LLM 生レスポンス</summary>
-            <pre>{summaryResult.raw_response}</pre>
-          </details>
         </div>
       )}
 
+      {/* Deep Research tabs */}
       {summaryResult && summaryStatus === "done" && (
         <div className="input-section">
-          <h3>Step 2: ジャーナル検索</h3>
+          <h3>Step 2: Deep Research</h3>
           <div className="report-tabs">
-            <button className={`report-tab ${searchTab === "api" ? "active" : ""}`} onClick={() => setSearchTab("api")}>API で Deep Research</button>
+            <button className={`report-tab ${searchTab === "api" ? "active" : ""}`} onClick={() => setSearchTab("api")}>API で実行</button>
             <button className={`report-tab ${searchTab === "paste" ? "active" : ""}`} onClick={() => setSearchTab("paste")}>外部 Deep Research を利用</button>
           </div>
 
           {searchTab === "api" && (
-            <div className="search-api-section">
-              <p className="hint-text" style={{ marginBottom: 12 }}>
-                API 経由で Deep Research を実行し、引用付きのジャーナル候補を取得します。
-              </p>
-              <div className="form-grid" style={{ maxWidth: 500 }}>
+            <div style={{ padding: "12px 0" }}>
+              <p className="hint-text">API Deep Research は今後実装予定です。現在は「外部 Deep Research を利用」タブをご使用ください。</p>
+              <div className="form-grid" style={{ maxWidth: 500, marginTop: 12, opacity: 0.5 }}>
                 <label>プロバイダー</label>
-                <select disabled>
-                  <option>Perplexity Sonar Deep Research</option>
-                  <option>OpenAI Deep Research</option>
-                  <option>Gemini Deep Research Agent</option>
-                  <option>Claude Web Search</option>
-                </select>
-                <label>調査方針</label>
-                <select disabled>
-                  <option>バランス</option>
-                  <option>低APC優先</option>
-                  <option>マッチ度優先</option>
-                  <option>高IFチャレンジ候補も含める</option>
-                </select>
+                <select disabled><option>Perplexity Sonar Deep Research</option></select>
               </div>
-              <div className="action-row" style={{ marginTop: 12 }}>
-                <button disabled>Deep Research を実行（準備中）</button>
-              </div>
-              <p className="hint-text" style={{ marginTop: 8 }}>
-                ※ API Deep Research は今後実装予定です。現在は「外部 Deep Research を利用」タブをご使用ください。
-              </p>
+              <button disabled style={{ marginTop: 12 }}>Deep Research を実行（準備中）</button>
             </div>
           )}
 
           {searchTab === "paste" && (
-            <div className="search-paste-section">
-              <p className="hint-text" style={{ marginBottom: 12 }}>
-                外部 AI（ChatGPT / Perplexity / Gemini / Claude 等）の Deep Research 結果を貼り付けて、ジャーナル候補を解析します。
-              </p>
-              <div className="action-row">
-                <button onClick={handleOpenModal}>
-                  Deep Research 結果を貼り付け
-                </button>
-                <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
+            <div>
+              {/* Step 2A: Positioning */}
+              <div className="search-step">
+                <h4>Step 2A: 先行研究上の立ち位置を調査</h4>
+                <p className="hint-text">この論文が先行研究の中でどういう位置にあるかを調べます。外部 AI の Deep Research に貼り付けてください。</p>
+
+                <div className="action-row" style={{ marginTop: 8 }}>
+                  <button onClick={onGetPositioningPrompt}>
+                    {positioningPrompt ? "プロンプトを再生成" : "プロンプトを生成"}
+                  </button>
+                  {positioningPrompt && (
+                    <button onClick={() => copyToClipboard(positioningPrompt, setPositioningCopied)}>
+                      {positioningCopied ? "コピー済み ✓" : "プロンプトをコピー"}
+                    </button>
+                  )}
+                </div>
+
+                {positioningPrompt && (
+                  <details className="raw-text-details" style={{ marginTop: 8 }}>
+                    <summary>プロンプト内容を表示</summary>
+                    <pre className="prompt-preview">{positioningPrompt}</pre>
+                  </details>
+                )}
+
+                {positioningPrompt && (
+                  <>
+                    <label style={{ marginTop: 12, display: "block", fontSize: 13, color: "#555" }}>
+                      外部 AI の Deep Research 結果を貼り付けてください:
+                    </label>
+                    <textarea
+                      className="result-textarea"
+                      value={positioningResult}
+                      onChange={e => onSetPositioningResult(e.target.value)}
+                      placeholder="ChatGPT / Perplexity / Gemini / Claude 等の Deep Research 結果をここに貼り付けてください..."
+                      rows={8}
+                    />
+                    {positioningResult && (
+                      <p className="hint-text" style={{ color: "#107c10" }}>✓ 立ち位置調査結果が貼り付けられました</p>
+                    )}
+                  </>
+                )}
               </div>
+
+              {/* Step 2B: Journal search */}
+              {positioningResult && (
+                <div className="search-step" style={{ marginTop: 20 }}>
+                  <h4>Step 2B: 投稿先ジャーナルを調査</h4>
+                  <p className="hint-text">Step 2A の結果を踏まえて、投稿先候補を探します。特に APC を避けられる候補を重視します。</p>
+
+                  <div className="action-row" style={{ marginTop: 8 }}>
+                    <button onClick={onGetJournalSearchPrompt}>
+                      {journalSearchPrompt ? "プロンプトを再生成" : "プロンプトを生成"}
+                    </button>
+                    {journalSearchPrompt && (
+                      <button onClick={() => copyToClipboard(journalSearchPrompt, setJournalCopied)}>
+                        {journalCopied ? "コピー済み ✓" : "プロンプトをコピー"}
+                      </button>
+                    )}
+                  </div>
+
+                  {journalSearchPrompt && (
+                    <details className="raw-text-details" style={{ marginTop: 8 }}>
+                      <summary>プロンプト内容を表示</summary>
+                      <pre className="prompt-preview">{journalSearchPrompt}</pre>
+                    </details>
+                  )}
+
+                  {journalSearchPrompt && (
+                    <>
+                      <label style={{ marginTop: 12, display: "block", fontSize: 13, color: "#555" }}>
+                        ジャーナル調査の Deep Research 結果を貼り付けてください:
+                      </label>
+                      <textarea
+                        className="result-textarea"
+                        value={externalJournalA}
+                        onChange={e => setExternalJournalA(e.target.value)}
+                        placeholder="ジャーナル候補の検索結果をここに貼り付けてください..."
+                        rows={8}
+                      />
+                      <label style={{ marginTop: 8, display: "block", fontSize: 12, color: "#888" }}>
+                        2つ目の AI 結果（任意）:
+                      </label>
+                      <textarea
+                        className="result-textarea"
+                        value={externalJournalB}
+                        onChange={e => setExternalJournalB(e.target.value)}
+                        placeholder="別の AI で同じプロンプトを実行した場合の結果（任意）..."
+                        rows={5}
+                      />
+                      <div className="action-row" style={{ marginTop: 12 }}>
+                        <button
+                          onClick={() => onParseExternalResults(externalJournalA, externalJournalB)}
+                          disabled={!externalJournalA.trim() || searchStatus === "in_progress"}
+                        >
+                          {searchStatus === "in_progress" ? "解析中..." : "貼り付け結果を解析"}
+                        </button>
+                        <span className={`status-chip ${stSearch.cls}`}>{stSearch.label}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
+      {/* Journal results table */}
       {journals.length > 0 && (
         <div className="input-section">
           <h3>推薦ジャーナル候補 ({journals.length} 件)</h3>
           {journals[0]?.journal_name.startsWith("(JSON parse failed") ? (
             <div className="raw-fallback">
-              <p className="hint-text" style={{ color: "#e57373" }}>
-                JSON のパースに失敗しました。LLM の生レスポンスを表示します。
-              </p>
+              <p className="hint-text" style={{ color: "#d13438" }}>JSON パース失敗。生レスポンスを表示します。</p>
               <pre className="raw-response">{journals[0].raw_response}</pre>
             </div>
           ) : (
             <>
               <div className="journal-filters">
                 <label>ソート: </label>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)}>
                   <option value="match_score">マッチ度</option>
                   <option value="cost_risk">費用リスク（低→高）</option>
                   <option value="recommendation">推薦レベル</option>
                 </select>
                 <label style={{ marginLeft: 12 }}>フィルタ: </label>
-                <select value={filterCost} onChange={(e) => setFilterCost(e.target.value as CostFilter)}>
+                <select value={filterCost} onChange={e => setFilterCost(e.target.value as CostFilter)}>
                   <option value="all">すべて</option>
                   <option value="low">低コストのみ</option>
                   <option value="medium">中コストまで</option>
@@ -221,23 +281,12 @@ function JournalPanel({
                 <table className="journal-table">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>ジャーナル名</th>
-                      <th>マッチ度</th>
-                      <th>IF/指標</th>
-                      <th>APC</th>
-                      <th>掲載方法</th>
-                      <th>費用リスク</th>
-                      <th>推薦</th>
+                      <th>#</th><th>ジャーナル名</th><th>マッチ度</th><th>IF/指標</th><th>APC</th><th>掲載方法</th><th>費用リスク</th><th>推薦</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedJournals.map((j, i) => (
-                      <tr
-                        key={j.journal_name}
-                        className={selectedJournal === j ? "selected" : ""}
-                        onClick={() => setSelectedJournal(selectedJournal === j ? null : j)}
-                      >
+                      <tr key={j.journal_name} className={selectedJournal === j ? "selected" : ""} onClick={() => setSelectedJournal(selectedJournal === j ? null : j)}>
                         <td>{i + 1}</td>
                         <td><strong>{j.journal_name}</strong></td>
                         <td>{j.match_score}%</td>
@@ -282,14 +331,6 @@ function JournalPanel({
           )}
         </div>
       )}
-
-      <PasteModal
-        isOpen={modalOpen}
-        searchPrompt={searchPrompt}
-        onClose={() => setModalOpen(false)}
-        onParse={handleParse}
-        isParsing={searchStatus === "in_progress"}
-      />
     </div>
   );
 }

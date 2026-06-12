@@ -127,6 +127,9 @@ function App() {
   const [summaryStatus, setSummaryStatus] = useState<PipelineStatus>("not_started");
   const [searchStatus, setSearchStatus] = useState<PipelineStatus>("not_started");
   const [searchPrompt, setSearchPrompt] = useState<string>("");
+  const [positioningPrompt, setPositioningPrompt] = useState<string>("");
+  const [positioningResult, setPositioningResult] = useState<string>("");
+  const [journalSearchPrompt, setJournalSearchPrompt] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [logExpanded, setLogExpanded] = useState(false);
@@ -196,19 +199,33 @@ function App() {
     }
   }, [manuscriptText, projectInfo, addLog, showStatus]);
 
-  const handleGetSearchPrompt = useCallback(async () => {
+  const handleGetPositioningPrompt = useCallback(async () => {
     if (!summaryResult) return;
     try {
-      addLog("Deep Research プロンプト生成開始");
-      const prompt = await invoke<string>("get_search_prompt", { summary: summaryResult });
-      setSearchPrompt(prompt);
-      addLog("Deep Research プロンプト生成完了");
+      addLog("Step 1: 立ち位置調査プロンプト生成開始");
+      const prompt = await invoke<string>("get_positioning_prompt", { summary: summaryResult });
+      setPositioningPrompt(prompt);
+      addLog("Step 1: プロンプト生成完了");
       showStatus("info", "プロンプトを生成しました。外部 AI に貼り付けてください。");
     } catch (e) {
       addLog(`プロンプト生成エラー: ${e}`);
       showStatus("error", `プロンプト生成に失敗しました: ${e}`);
     }
   }, [summaryResult, addLog, showStatus]);
+
+  const handleGetJournalSearchPrompt = useCallback(async () => {
+    if (!summaryResult) return;
+    try {
+      addLog("Step 2: ジャーナル調査プロンプト生成開始");
+      const prompt = await invoke<string>("get_journal_search_prompt", { summary: summaryResult, positioning: positioningResult });
+      setJournalSearchPrompt(prompt);
+      addLog("Step 2: プロンプト生成完了");
+      showStatus("info", "プロンプトを生成しました。外部 AI に貼り付けてください。");
+    } catch (e) {
+      addLog(`プロンプト生成エラー: ${e}`);
+      showStatus("error", `プロンプト生成に失敗しました: ${e}`);
+    }
+  }, [summaryResult, positioningResult, addLog, showStatus]);
 
   const handleParseExternalResults = useCallback(async (externalA: string, externalB: string) => {
     if (!summaryResult || !externalA.trim()) return;
@@ -351,9 +368,13 @@ function App() {
               journals={journals}
               summaryStatus={summaryStatus}
               searchStatus={searchStatus}
-              searchPrompt={searchPrompt}
+              positioningPrompt={positioningPrompt}
+              positioningResult={positioningResult}
+              journalSearchPrompt={journalSearchPrompt}
               onGenerateSummary={handleGenerateSummary}
-              onGetSearchPrompt={handleGetSearchPrompt}
+              onGetPositioningPrompt={handleGetPositioningPrompt}
+              onSetPositioningResult={setPositioningResult}
+              onGetJournalSearchPrompt={handleGetJournalSearchPrompt}
               onParseExternalResults={handleParseExternalResults}
             />
           )}

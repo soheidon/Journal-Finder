@@ -56,11 +56,18 @@ Output this exact JSON structure:
 }
 
 pub fn build_deep_research_prompt(summary: &SummaryResult) -> String {
+    // This is the combined prompt for backward compatibility
+    let positioning = build_positioning_prompt(summary);
+    let journal = build_journal_search_prompt(summary, "");
+    format!("{}\n\n---\n\n{}", positioning, journal)
+}
+
+pub fn build_positioning_prompt(summary: &SummaryResult) -> String {
     let keywords = summary.keywords_for_search.join(", ");
 
     format!(
-        r#"You are a research assistant specializing in academic journal selection.
-Based on the manuscript summary below, find 5-10 real, existing academic journals that would be suitable submission targets.
+        r#"You are a research assistant specializing in academic literature surveys.
+Based on the manuscript summary below, investigate where this paper stands in the existing literature.
 
 ## Manuscript Information
 - Research Topic: {topic}
@@ -72,25 +79,36 @@ Based on the manuscript summary below, find 5-10 real, existing academic journal
 - Keywords: {keywords}
 
 ## Task
-Search for real academic journals that match this manuscript. For each journal, provide ALL of the following:
+Investigate the following and provide a detailed positioning report:
 
-1. **Journal Name** — full official name
-2. **Publisher**
-3. **Scope Fit** — how well the journal's scope matches this research topic
-4. **Article Type Fit** — does this journal accept this type of article (original research, review, etc.)
-5. **Similar Articles** — examples of similar articles published in this journal (if known)
-6. **Impact Factor / Metric** — current IF, CiteScore, or other ranking metric
-7. **APC** — article processing charge (e.g. "$2,000", "Free", "€1,500")
-8. **Word Limit** — manuscript word limit if any
-9. **Open Access Policy** — gold OA, hybrid, green, or subscription
-10. **Pros** — advantages of submitting to this journal
-11. **Cons** — disadvantages or risks
-12. **Recommendation Level** — Strong / Moderate / Weak
-13. **Reason** — concise reason why this journal fits (1-2 sentences)
-14. **Source Evidence** — what evidence supports this recommendation (URL, prior knowledge, etc.)
+1. **Closest Prior Studies**
+   - Find 5-10 representative papers on the same or very similar research topics.
+   - For each: authors, year, title, journal, objective, sample, design, main findings.
 
-Use your web search capability if available. Provide current, accurate information.
-Rank by fit quality (best fit first)."#,
+2. **Novelty Assessment**
+   - What is genuinely new about this manuscript compared to existing research?
+   - Which aspects are already well-established?
+   - Is this a replication, incremental extension, or significant contribution?
+
+3. **Methodological Positioning**
+   - How do the methods compare to prior work?
+   - Are the methods standard, innovative, or unusual for this field?
+
+4. **Research Domain**
+   - Which research field(s) does this paper belong to?
+   - Which sub-disciplines or specialties?
+   - What journals typically publish this type of research?
+
+5. **Keywords for Journal Search**
+   - Propose 10-20 search keywords useful for finding suitable journals.
+   - Include field-specific terms, methodology terms, population terms.
+
+6. **Summary**
+   - In 2-3 sentences, describe where this paper sits in the existing literature.
+   - What type of journal would be the best fit (scope, tier, audience)?
+
+Provide specific references with author names, year, title, journal name, and URL where available.
+If evidence is uncertain, clearly state that it is uncertain."#,
         topic = summary.research_topic,
         objective = summary.objective,
         sample = summary.sample_summary,
@@ -98,6 +116,70 @@ Rank by fit quality (best fit first)."#,
         methods = summary.methods_summary,
         findings = summary.findings,
         keywords = keywords,
+    )
+}
+
+pub fn build_journal_search_prompt(summary: &SummaryResult, positioning: &str) -> String {
+    let keywords = summary.keywords_for_search.join(", ");
+
+    let positioning_section = if positioning.is_empty() {
+        "(Positioning report not available. Proceed based on manuscript summary alone.)".to_string()
+    } else {
+        positioning.to_string()
+    };
+
+    format!(
+        r#"You are a research assistant specializing in academic journal selection.
+Based on the manuscript summary and the positioning report below, find suitable academic journals for submission.
+
+## Manuscript Information
+- Research Topic: {topic}
+- Objective: {objective}
+- Sample: {sample}
+- Design: {design}
+- Methods: {methods}
+- Findings: {findings}
+- Keywords: {keywords}
+
+## Positioning Report (from prior research)
+{positioning}
+
+## Task
+Search for real academic journals that match this manuscript. Find as many candidates as possible (do NOT limit to 10).
+For each journal, provide ALL of the following:
+
+1. **Journal Name** — full official name
+2. **Publisher**
+3. **Scope Fit** — how well the journal's scope matches (0-100%)
+4. **Article Type Fit** — does this journal accept this type of article
+5. **Similar Articles** — examples of similar articles published in this journal
+6. **Impact Factor / Metric** — current IF, CiteScore, or other ranking
+7. **APC** — article processing charge amount
+8. **APC Required** — "required" / "optional" / "no_apc" / "unknown"
+9. **APC Avoidance** — can APC be avoided? (e.g. non-OA option in hybrid journal)
+10. **Waiver / Discount** — any waiver, discount, or Read & Publish possibilities
+11. **Word Limit** — manuscript word limit
+12. **Open Access Policy** — gold OA, hybrid, green, subscription
+13. **Pros** — advantages
+14. **Cons** — disadvantages
+15. **Recommendation Level** — Strong / Moderate / Weak
+16. **Reason** — why this journal fits
+17. **Source Evidence** — URL or evidence
+18. **Match Score** — 0-100 integer
+19. **Publication Route** — subscription, hybrid OA, gold OA, etc.
+20. **Recommended Submission Strategy** — cost-optimal strategy
+21. **Cost Risk Level** — low / medium / high / unknown
+
+Prioritize journals where APC can be avoided (subscription journals, hybrid with non-OA option).
+Include all candidates found — do NOT limit the number."#,
+        topic = summary.research_topic,
+        objective = summary.objective,
+        sample = summary.sample_summary,
+        design = summary.design,
+        methods = summary.methods_summary,
+        findings = summary.findings,
+        keywords = keywords,
+        positioning = positioning_section,
     )
 }
 
