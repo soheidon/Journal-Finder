@@ -274,6 +274,31 @@ function App() {
       await invoke("add_recent_project", { info });
       addLog(`プロジェクト開く: ${info.path}`);
       showStatus("info", `プロジェクト「${info.name}」を開きました`);
+
+      // Restore saved data
+      try {
+        const manuscriptJson = await invoke<string>("load_project_file", { projectDir: path, filename: "manuscript_text.json" });
+        const ms = JSON.parse(manuscriptJson) as ManuscriptText;
+        setManuscriptText(ms);
+        setExtractStatus("done");
+        addLog(`テキスト復元: ${ms.paragraph_count} 段落`);
+      } catch (_) { /* no saved text */ }
+
+      try {
+        const summaryJson = await invoke<string>("load_project_file", { projectDir: path, filename: "summary.json" });
+        const sr = JSON.parse(summaryJson) as SummaryResult;
+        setSummaryResult(sr);
+        setSummaryStatus("done");
+        addLog(`要約復元: ${sr.research_topic}`);
+      } catch (_) { /* no saved summary */ }
+
+      try {
+        const journalsJson = await invoke<string>("load_project_file", { projectDir: path, filename: "journals.json" });
+        const js = JSON.parse(journalsJson) as JournalCandidate[];
+        setJournals(js);
+        setSearchStatus("done");
+        addLog(`ジャーナル候補復元: ${js.length} 件`);
+      } catch (_) { /* no saved journals */ }
     } catch (e) {
       addLog(`プロジェクト読み込みエラー: ${e}`);
       showStatus("error", `${e}`);
