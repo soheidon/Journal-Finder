@@ -131,4 +131,4 @@ npm run tauri dev
 
 ## ライセンス
 
-個人利用および非営利目的に限り使用が許可されています。
+MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
