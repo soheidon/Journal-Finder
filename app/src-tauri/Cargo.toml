@@ -1,6 +1,6 @@
 [package]
 name = "journal-finder"
-version = "0.1.0"
+version = "0.1.1"
 description = "Journal Finder - Academic Journal Recommendation Tool"
 authors = ["you"]
 edition = "2021"

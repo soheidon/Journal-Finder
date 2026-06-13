@@ -12,6 +12,7 @@ dist/
 Thumbs.db
 .DS_Store
 icon/
+mac/
 
 # Secrets
 .env
