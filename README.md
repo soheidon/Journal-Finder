@@ -1,4 +1,4 @@
-# 論文投稿先アドバイザ
+# Journal Finder 論文投稿先アドバイザ
 
 学術論文の投稿先ジャーナルを、費用面も含めて総合的に推薦するデスクトップアプリケーションです。
 
@@ -14,20 +14,7 @@
 
 ### Windows
 
-[Releases](https://github.com/soheidon/Journal-Finder/releases) ページから最新の `.exe` ファイルをダウンロードしてインストールしてください。
-
-### macOS（Apple Silicon）
-
-[Releases](https://github.com/soheidon/Journal-Finder/releases) ページから `Journal Finder_x.x.x_aarch64.dmg` をダウンロードしてインストールしてください。
-
-**注意**: macOS 版は未署名・未公証のため、初回起動時に Gatekeeper にブロックされる場合があります。その場合は以下の手順で起動してください。
-
-1. ダウンロードした `.dmg` を開き、`.app` を `Applications` フォルダにコピー
-2. 起動しようとすると「開けません」というダイアログが表示される
-3. 「システム設定」→「プライバシーとセキュリティ」→「セキュリティ」で「許可」をクリック
-4. または、`Terminal` で `xattr -cr "/Applications/Journal Finder.app"` を実行してから再起動
-
-**対象アーキテクチャ**: Apple Silicon（M1 / M2 / M3 / M4）。Intel Mac には対応していません。
+[Releases](https://github.com/soheidon/Journal-Finder/releases) ページから最新の `.msi` ファイルをダウンロードしてインストールしてください。
 
 ### ソースコードからのビルド
 

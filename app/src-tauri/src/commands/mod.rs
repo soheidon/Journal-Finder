@@ -49,8 +49,8 @@ pub struct JournalCandidate {
 pub fn healthcheck() -> Result<serde_json::Value, String> {
     Ok(serde_json::json!({
         "status": "ok",
-        "app": "論文投稿先アドバイザ",
-        "version": "0.1.0",
+        "app": "Journal Finder 論文投稿先アドバイザ",
+        "version": "0.1.2",
         "rust_version": env!("CARGO_PKG_RUST_VERSION", "unknown"),
     }))
 }
