@@ -9,45 +9,6 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: app/package-lock.json
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies
-        working-directory: app
-        run: npm ci
-
-      - name: Build Tauri app
-        working-directory: app
-        run: npm run tauri build
-
-      - name: Collect macOS artifacts
-        working-directory: app
-        run: |
-          set -eux
-          mkdir -p dist-artifacts
-          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.tar.gz" -o -name "*.app.tar.gz" \) -exec cp {} dist-artifacts/ \;
-          ls -la dist-artifacts
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-build
-          path: app/dist-artifacts/*
-          if-no-files-found: error
-
   build-windows:
     runs-on: windows-latest
     steps:
@@ -72,45 +33,37 @@ jobs:
         working-directory: app
         run: npm run tauri build
 
-      - name: Collect Windows artifacts
+      - name: Collect MSI artifact
         shell: pwsh
         working-directory: app
         run: |
           New-Item -ItemType Directory -Force -Path dist-artifacts
-          Get-ChildItem -Path src-tauri/target/release/bundle -Recurse -Include *.msi,*.exe |
+          Get-ChildItem -Path src-tauri/target/release/bundle -Recurse -Include *.msi |
             Copy-Item -Destination dist-artifacts/
           Get-ChildItem dist-artifacts
 
-      - name: Upload Windows artifacts
+      - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
+          name: windows-msi
           path: app/dist-artifacts/*
           if-no-files-found: error
 
   release:
-    needs: [build-macos, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download macOS artifacts
+      - name: Download MSI artifact
         uses: actions/download-artifact@v4
         with:
-          name: macos-build
-          path: ./artifacts/macos
-
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-build
+          name: windows-msi
           path: ./artifacts/windows
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: |
-            ./artifacts/macos/*
-            ./artifacts/windows/*
+          files: ./artifacts/windows/*
